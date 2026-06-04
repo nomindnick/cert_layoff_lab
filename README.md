@@ -16,6 +16,7 @@ full project brief, goals, and architecture.
 |---|---|---|
 | 0. Inventory | `pipeline/inventory.py` | `output/inventory/manifest.json`, `report.md` — per-file format/quality/classification, dedupe groups, coverage map |
 | 1a. Summary taxonomy | `pipeline/summaries_taxonomy.py` | `output/summaries/taxonomy.json`, `taxonomy_drift.md` — top-level issue taxonomy per annual summary, canonical mapping, drift matrix |
+| 1b. Summary holdings | `pipeline/summaries_holdings.py` | `output/summaries/holdings.jsonl`, `case_index.jsonl`, `report_holdings.md` — per-holding records (category path, text, district/ALJ cites, QA flags) parsed from every volume |
 
 ## Setup
 
