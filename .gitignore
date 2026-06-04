@@ -1,0 +1,9 @@
+# Corpus documents (CPRA-obtained, proprietary, contain respondent PII) —
+# never commit raw or derived data to this public repo.
+Cert_Layoffs_Docs_V1/
+output/
+
+# Environment
+.venv/
+__pycache__/
+*.pyc
