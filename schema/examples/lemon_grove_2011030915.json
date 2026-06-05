@@ -1,0 +1,510 @@
+{
+  "schema_version": "0.1.0",
+  "identity": {
+    "oah_case_no": "2011030915",
+    "district": {
+      "raw": "Lemon Grove School District",
+      "canonical": null,
+      "canonical_id": null
+    },
+    "county": null,
+    "alj": {
+      "raw": "Mary Agnes Matyszewski",
+      "canonical": null,
+      "canonical_id": null
+    },
+    "decision_date": null,
+    "decision_kind": "proposed_decision",
+    "hearing": {
+      "dates": [
+        "2011-04-21"
+      ],
+      "location": "Lemon Grove, California"
+    },
+    "school_year_affected": "2011-2012"
+  },
+  "procedure": {
+    "counsel": [
+      {
+        "party": "district",
+        "name": "William Diedrich",
+        "firm": {
+          "raw": "Atkinson, Andelson, Loya, Rudd & Romo",
+          "canonical": null,
+          "canonical_id": null
+        }
+      },
+      {
+        "party": "respondents",
+        "name": "Georgiana D’Alessandro",
+        "firm": {
+          "raw": "Tosdal, Smith, Steiner & Wax",
+          "canonical": null,
+          "canonical_id": null
+        }
+      }
+    ],
+    "respondent_counts": {
+      "n_noticed": null,
+      "n_appearing": null,
+      "n_represented": null,
+      "n_self_represented": 1,
+      "n_default": 1
+    },
+    "stipulated": false,
+    "consolidated_with": []
+  },
+  "board_action": {
+    "resolutions": [
+      {
+        "number": "10-11-19",
+        "date": "2011-03-08"
+      },
+      {
+        "number": "10-11-20",
+        "date": "2011-03-08"
+      }
+    ],
+    "fte_reduced": {
+      "regular": 9.0,
+      "temporary": 35.76
+    },
+    "services_reduced": [
+      {
+        "description": "Services per Exhibit A to Resolution 10-11-19 (9.0 regular certificated FTE, 35.76 temporary FTE); the specific service list is not reproduced in the decision.",
+        "quote": {
+          "quote": "consisting of 9.0 regular certificated FTEs and 35.76 temporary FTEs",
+          "section": "FACTUAL FINDINGS"
+        }
+      }
+    ],
+    "statutory_basis": "pks",
+    "artifacts": {
+      "skip_criteria": {
+        "status": "quoted_verbatim",
+        "text": "Three WHEREAS clauses: specific and compelling need to retain (1) employees with BCLAD authorization to teach English language learners; (2) employees teaching in the district's bilingual dual immersion program; (3) teachers who have attained National Board Certification.",
+        "quote": {
+          "quote": "a specific and compelling need exists to retain certificated employees who have Bilingual Cross-cultural Language Arts Development",
+          "section": "FACTUAL FINDINGS"
+        }
+      },
+      "tiebreak_criteria": {
+        "status": "mentioned_only",
+        "text": null,
+        "quote": {
+          "quote": "The District was not required to use these criteria to break any actual ties in this proceeding.",
+          "section": "FACTUAL FINDINGS"
+        }
+      },
+      "competency_definition": {
+        "status": "quoted_verbatim",
+        "text": "Seven-element bumping competency definition: (1) valid credential in relevant subject matter; (2) NCLB highly-qualified status in position to be assumed; (3) BCLAD if displacing a BCLAD holder; (4) special training and experience for specialized positions (AVID, EDP lead, Dual Immersion); (5) National Board Certification if displacing an NBC holder; (6) for K-5 or self-contained 6th grade positions, 1 year elementary experience in past 5 years; (7) for 6th-8th grade non-self-contained positions, 1 year experience in the assignment within last 5 years.",
+        "quote": {
+          "quote": "possession of: (1) a valid credential in the relevant subject matter area",
+          "section": "FACTUAL FINDINGS"
+        }
+      }
+    }
+  },
+  "outcome": {
+    "overall": "sustained_in_part",
+    "roster": [
+      {
+        "ref": "R1",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R2",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R3",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R4",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R5",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R6",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R7",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R8",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R9",
+        "name": null,
+        "source": "body"
+      }
+    ],
+    "roster_completeness": "partial",
+    "respondent_dispositions": [
+      {
+        "ref": "R1",
+        "representation": {
+          "kind": "self",
+          "counsel_index": null
+        },
+        "disposition": "terminated",
+        "detail": "Assignment corrected on seniority list from assistant principal to principal; correction did not affect layoff.",
+        "reason": "Cannot bump into a teaching position.",
+        "quote": {
+          "quote": "This correction did not affect the District’s ability to lay him off in this proceeding and he cannot bump into a teaching position.",
+          "section": "FACTUAL FINDINGS — Other Issues"
+        }
+      },
+      {
+        "ref": "R2",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 1
+        },
+        "disposition": "terminated",
+        "detail": null,
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R3",
+        "representation": {
+          "kind": "unknown",
+          "counsel_index": null
+        },
+        "disposition": "terminated",
+        "detail": "Initially served only a precautionary layoff notice.",
+        "reason": "Displaced by the R9 bump cascade; less senior and cannot bump into any position held by a more junior employee.",
+        "quote": {
+          "quote": "will now be terminated from employment with the District as she has less seniority and cannot bump into any position held by a more junior employee.",
+          "section": "FACTUAL FINDINGS — Other Issues"
+        }
+      },
+      {
+        "ref": "R4",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 1
+        },
+        "disposition": "terminated",
+        "detail": "Assignment determined at hearing to be a 6th-7th-8th grade curriculum, not a self-contained 6th grade class.",
+        "reason": "More senior employee (R9) bumped into his position.",
+        "quote": null
+      },
+      {
+        "ref": "R5",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 1
+        },
+        "disposition": "terminated",
+        "detail": null,
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R6",
+        "representation": {
+          "kind": "none",
+          "counsel_index": null
+        },
+        "disposition": "terminated",
+        "detail": "Requested a hearing but did not appear.",
+        "reason": null,
+        "quote": {
+          "quote": "Respondent [R6] requested a hearing but did not appear and was not represented.",
+          "section": "Appearances"
+        }
+      },
+      {
+        "ref": "R7",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 1
+        },
+        "disposition": "terminated",
+        "detail": null,
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R8",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 1
+        },
+        "disposition": "terminated",
+        "detail": null,
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R9",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 1
+        },
+        "disposition": "accusation_dismissed",
+        "detail": "Accusation dismissed and layoff notice rescinded.",
+        "reason": "Senior to R4 with a supplemental authorization permitting middle school assignment; bumped into R4's position.",
+        "quote": {
+          "quote": "It is recommended that the Accusation served on respondent [R9] be dismissed and her layoff notice be rescinded.",
+          "section": "RECOMMENDATION"
+        }
+      }
+    ]
+  },
+  "holdings": [
+    {
+      "issue": {
+        "category": "skipping",
+        "category_proposed": null,
+        "subtype": "specific need / special training and experience (§ 44955(d)(1))",
+        "subtype_is_novel": false,
+        "statement": "Whether the District could deviate from seniority order to retain junior teachers holding BCLAD authorization or teaching in the bilingual dual immersion program."
+      },
+      "raised_by": "unknown",
+      "arguments": [
+        {
+          "party": "district",
+          "summary": "Forty percent of district students are English language learners, creating a specific need to retain BCLAD-authorized teachers and dual immersion teachers regardless of seniority.",
+          "quote": {
+            "quote": "making it necessary to offer bilingual education to its students",
+            "section": "FACTUAL FINDINGS"
+          }
+        }
+      ],
+      "facts": [
+        {
+          "summary": "Superintendent Anastos testified that 40% of district students are English language learners.",
+          "quote": {
+            "quote": "forty percent of students in the",
+            "section": "FACTUAL FINDINGS ¶16"
+          }
+        },
+        {
+          "summary": "The district skipped teachers who possessed a BCLAD or taught the Spanish portion of the dual immersion program, per the resolution's skip criteria.",
+          "quote": {
+            "quote": "the Resolution permitted the District to “skip” teachers who possessed a BCLAD or taught in the dual immersion program",
+            "section": "FACTUAL FINDINGS ¶16"
+          }
+        }
+      ],
+      "authorities": [
+        {
+          "raw_cite": "Education Code section 44955, subdivision (d)(1)",
+          "type": "statute",
+          "canonical": null,
+          "role": "relied_on",
+          "proposition": "A district may deviate from seniority order where it demonstrates a specific need and the retained employee has special training and experience others with more seniority lack."
+        },
+        {
+          "raw_cite": "Bledsoe v. Biggs Unified School District (2008) 170 Cal.App.4th 127, 131",
+          "type": "case",
+          "canonical": null,
+          "role": "relied_on",
+          "proposition": "Under section 44955(d)(1) a district may skip a junior teacher being retained for specified reasons."
+        },
+        {
+          "raw_cite": "Santa Clara Federation of Teachers, Local 2393, v. Governing Board of Santa Clara Unified School District (1981) 116 Cal.App.3d 831, 842-843",
+          "type": "case",
+          "canonical": null,
+          "role": "relied_on",
+          "proposition": "Junior teachers may be given retention priority over senior teachers only if they possess superior skills or capabilities their senior counterparts lack."
+        },
+        {
+          "raw_cite": "Alexander v. Delano Joint Union High SchoolDistrict (1983) 139 Cal.App.3d 567",
+          "type": "case",
+          "canonical": null,
+          "role": "relied_on",
+          "proposition": "A junior employee possessing special competence can be retained over a senior employee lacking such competence."
+        }
+      ],
+      "reasoning": {
+        "summary": "The superintendent's testimony established the district's specific need (40% EL population; dual immersion program goals), satisfying the section 44955(d)(1) exception for the BCLAD and dual immersion skips authorized by the resolution.",
+        "quotes": [
+          {
+            "quote": "The testimony of Superintendent Anastos established that the needs of the District required it to skip the certificated employees with a BCLAD or who taught Spanish in the dual immersion program.",
+            "section": "FACTUAL FINDINGS"
+          }
+        ]
+      },
+      "ruling": {
+        "prevailing_party": "district",
+        "disposition_text": "Skip upheld; junior BCLAD and dual immersion teachers properly retained out of seniority order.",
+        "remedies": [
+          "none"
+        ],
+        "affected_respondents": []
+      },
+      "summary_style_holding": "District properly skipped junior teachers who possessed BCLAD certification or taught the Spanish portion of the district's dual immersion program, where the superintendent's testimony established that forty percent of district students were English language learners and the district demonstrated a specific need for personnel with special training and experience under Education Code section 44955, subdivision (d)(1). Lemon Grove (Matyszewski).",
+      "notable": {
+        "flag": false,
+        "note": null
+      }
+    },
+    {
+      "issue": {
+        "category": "seniority",
+        "category_proposed": null,
+        "subtype": "seniority list accuracy / assignment classification",
+        "subtype_is_novel": false,
+        "statement": "Whether respondent R1's assignment was incorrectly identified on the seniority list as assistant principal rather than principal, and whether the error affected his layoff."
+      },
+      "raised_by": "unknown",
+      "arguments": [],
+      "facts": [
+        {
+          "summary": "During the hearing the district determined R1's assignment was incorrectly identified on the seniority list as assistant principal; he is properly a principal.",
+          "quote": {
+            "quote": "assignment was incorrectly identified on the seniority list as an assistant principal and should properly identify him as a principal",
+            "section": "FACTUAL FINDINGS — Other Issues"
+          }
+        }
+      ],
+      "authorities": [],
+      "reasoning": {
+        "summary": "Correction of the seniority list recommended, but the misclassification did not affect the district's ability to lay R1 off; as an administrator he cannot bump into a teaching position.",
+        "quotes": [
+          {
+            "quote": "This correction did not affect the District’s ability to lay him off in this proceeding and he cannot bump into a teaching position.",
+            "section": "FACTUAL FINDINGS — Other Issues"
+          }
+        ]
+      },
+      "ruling": {
+        "prevailing_party": "mixed",
+        "disposition_text": "Seniority list correction recommended; layoff nonetheless sustained.",
+        "remedies": [
+          "correct_seniority_list"
+        ],
+        "affected_respondents": [
+          "R1"
+        ]
+      },
+      "summary_style_holding": "Where the district determined during hearing that a respondent's assignment was incorrectly identified on the seniority list as assistant principal rather than principal, the ALJ recommended the district correct its seniority list, but the correction did not affect the district's ability to lay off the respondent, who could not bump into a teaching position. Lemon Grove (Matyszewski).",
+      "notable": {
+        "flag": false,
+        "note": null
+      }
+    },
+    {
+      "issue": {
+        "category": "bumping",
+        "category_proposed": null,
+        "subtype": "bump chain / cascading displacement",
+        "subtype_is_novel": false,
+        "statement": "Whether a senior teacher holding a supplemental authorization could bump into a junior teacher's middle school position, and the cascading effect on a precautionary-noticed employee."
+      },
+      "raised_by": "district",
+      "arguments": [],
+      "facts": [
+        {
+          "summary": "At hearing the district determined R4 teaches a 6th-7th-8th grade curriculum, not the self-contained 6th grade assignment previously presumed.",
+          "quote": {
+            "quote": "teaches a sixth, seventh and eighth grade curriculum, not a self-contained sixth grade assignment as previously presumed",
+            "section": "FACTUAL FINDINGS — Other Issues"
+          }
+        },
+        {
+          "summary": "R9, senior to R4 and holding a supplemental authorization to teach at the middle school level, could bump into R4's position; no respondent senior to R9 was certificated and competent to bump her.",
+          "quote": {
+            "quote": "could “bump” into [R4]’s teaching position. No respondent more senior to [R9] was certificated and competent to bump [R9].",
+            "section": "FACTUAL FINDINGS — Other Issues"
+          }
+        },
+        {
+          "summary": "As a result of the bump, R3 — initially served only a precautionary notice — is terminated, having less seniority and no junior position to bump into.",
+          "quote": {
+            "quote": "who initially received a precautionary layoff, will now be terminated from employment with the District",
+            "section": "FACTUAL FINDINGS — Other Issues"
+          }
+        }
+      ],
+      "authorities": [
+        {
+          "raw_cite": "Lacy v. Richmond Unified School District (1975) 13 Cal.3d 469, 473-474",
+          "type": "case",
+          "canonical": null,
+          "role": "relied_on",
+          "proposition": "A senior teacher whose position is discontinued has the right to transfer to a continuing position which he or she is certificated and competent to fill, displacing a junior employee."
+        }
+      ],
+      "reasoning": {
+        "summary": "Once R4's actual assignment was established, R9's seniority plus supplemental authorization satisfied the certificated-and-competent standard for bumping; the displacement cascaded to convert R3's precautionary notice into a termination.",
+        "quotes": []
+      },
+      "ruling": {
+        "prevailing_party": "mixed",
+        "disposition_text": "R9's accusation dismissed and notice rescinded; R4 terminated; R3's precautionary notice converted to termination.",
+        "remedies": [
+          "dismiss_accusation",
+          "rescind_notice"
+        ],
+        "affected_respondents": [
+          "R9",
+          "R4",
+          "R3"
+        ]
+      },
+      "summary_style_holding": "Where hearing evidence established that a junior teacher's assignment was a sixth-seventh-and-eighth grade curriculum rather than a self-contained sixth grade class, a more senior teacher holding a supplemental authorization to teach at the middle school level was permitted to bump into his position and her accusation was dismissed; a precautionary-noticed employee displaced by the resulting cascade was terminated. Lemon Grove (Matyszewski).",
+      "notable": {
+        "flag": true,
+        "note": "Single corrected fact produced a three-employee cascading displacement (an implicit domino application the ALJ does not name), and converted a precautionary notice into a termination — illustrates why precautionary notices matter."
+      }
+    }
+  ],
+  "related_proceedings": [],
+  "full_text": null,
+  "provenance": {
+    "source_files": [
+      {
+        "path": "download (1)/Lemon Grove SD OAH Case No 2011030915.DOC",
+        "sha1": "ef5edec76f54713fb966631adb1152c0708bb323",
+        "kind": "native_doc"
+      },
+      {
+        "path": "download (1)/Lemon Grove SD OAH Case No 2011030915.pdf",
+        "sha1": "680ac30f28fc35d77d8c7bc39eefc97833422833",
+        "kind": "pdf_text"
+      }
+    ],
+    "text_sha1": "8454ffb4778cb35e6867ab68fb969e40c5acbbe4",
+    "passes": [
+      {
+        "name": "hand_filled_example",
+        "model": null,
+        "prompt_version": null,
+        "run_at": "2026-06-05T00:00:00Z",
+        "notes": "Hand-filled worked example; all quote anchors machine-verified against the cached native-DOC text. Quirks: the DOC's DATED line is blank (unsigned working copy) so decision_date is null — production should prefer the signed PDF twin for dates. Legal Conclusions contain a source typo ('May 15, 2009' for 2011). 62 temporary employees released by employee number per Resolution 10-11-20/Exhibit 12 are not individually rosterable; respondents' counsel also represented three unnamed temporary teachers."
+      },
+      {
+        "name": "redaction",
+        "model": null,
+        "prompt_version": null,
+        "run_at": "2026-06-05T00:00:00Z",
+        "notes": "Public exemplar: respondent names replaced with [Rn] placeholders in all strings, roster names and full_text removed. Quote anchors are therefore NOT verbatim in this copy; the private twin (output/examples/, untracked) holds verbatim anchors verified against text_sha1."
+      }
+    ],
+    "reconciliation": {
+      "status": "human_verified",
+      "disagreements": []
+    }
+  }
+}
