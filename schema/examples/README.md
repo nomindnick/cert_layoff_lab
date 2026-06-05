@@ -26,3 +26,18 @@ public actors, consistent with the annual compilations' citation convention
   precautionary-converted / self-represented / default), and a blank DATED
   line in the native DOC (decision_date null; signed PDF twin is the
   production source for dates).
+- `placentia_yorba_linda_2009030040.json` — Placentia-Yorba Linda USD
+  (Rosenman, 2009). The contested exemplar: 9 holdings including respondent
+  wins (Kavanaugh conversion cascading rescissions to senior credential-mates),
+  three distinct credential-based bump rejections, a skip fight, a
+  jurisdictional ruling, and a `none_ruled` footnote observation. Doubles as a
+  gold eval fixture: 7 expert-written holdings in the 2009 summary volume cite
+  this case (one cross-filed under two categories — many-to-many alignment in
+  the wild), and 3 holdings here are absent from gold (over-recovery
+  candidates). Also preserves a source error (Legal Conclusions misname a
+  junior employee) flagged in `notable` rather than silently corrected.
+- `los_altos_2011030660.json` — Los Altos SD (Astle, 2011). The
+  stipulated-thin exemplar: empty `holdings[]` is the correct record of a
+  fully stipulated matter, while dispositions still carry signal — 10
+  rescissions, 3 partial FTE retentions (`partially_terminated`), remainder
+  terminated en masse and unrosterable (`roster_completeness: partial`).

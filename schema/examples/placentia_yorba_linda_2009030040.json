@@ -1,0 +1,1196 @@
+{
+  "schema_version": "0.1.0",
+  "identity": {
+    "oah_case_no": "2009030040",
+    "district": {
+      "raw": "Placentia-Yorba Linda Unified School District",
+      "canonical": null,
+      "canonical_id": null
+    },
+    "county": null,
+    "alj": {
+      "raw": "David B. Rosenman",
+      "canonical": null,
+      "canonical_id": null
+    },
+    "decision_date": "2009-05-01",
+    "decision_kind": "proposed_decision",
+    "hearing": {
+      "dates": [
+        "2009-04-23"
+      ],
+      "location": "Placentia, California"
+    },
+    "school_year_affected": "2009-2010"
+  },
+  "procedure": {
+    "counsel": [
+      {
+        "party": "district",
+        "name": "David C. Larsen",
+        "firm": {
+          "raw": "Rutan & Tucker",
+          "canonical": null,
+          "canonical_id": null
+        }
+      },
+      {
+        "party": "district",
+        "name": "Denise L. Mester",
+        "firm": {
+          "raw": "Rutan & Tucker",
+          "canonical": null,
+          "canonical_id": null
+        }
+      },
+      {
+        "party": "respondents",
+        "name": "Richard J. Schwab",
+        "firm": {
+          "raw": "Trygstad, Schwab & Trygstad",
+          "canonical": null,
+          "canonical_id": null
+        }
+      }
+    ],
+    "respondent_counts": {
+      "n_noticed": 31,
+      "n_appearing": null,
+      "n_represented": 29,
+      "n_self_represented": 0,
+      "n_default": 4
+    },
+    "stipulated": false,
+    "consolidated_with": []
+  },
+  "board_action": {
+    "resolutions": [
+      {
+        "number": "22",
+        "date": "2009-03-10"
+      }
+    ],
+    "fte_reduced": {
+      "regular": 91.1,
+      "temporary": null
+    },
+    "services_reduced": [
+      {
+        "description": "Class-size reduction for grades 1 and 2 — 58.0 FTE",
+        "quote": {
+          "quote": "Class-size reduction for grades 1 and 2",
+          "section": "FACTUAL FINDINGS ¶10"
+        }
+      },
+      {
+        "description": "Teachers on Special Assignment (TOSAs) — 5.0 FTE",
+        "quote": null
+      },
+      {
+        "description": "Counselors (7-12) — 6.5 FTE",
+        "quote": null
+      },
+      {
+        "description": "School Psychologists — 1.6 FTE",
+        "quote": null
+      },
+      {
+        "description": "Single-subject course offerings (7-12): Language Arts 6.0, Art 2.0, Math 3.0, Physical Education 3.0, Social Science 4.0, Science 2.0 FTE",
+        "quote": null
+      }
+    ],
+    "statutory_basis": "pks",
+    "artifacts": {
+      "skip_criteria": {
+        "status": "unknown",
+        "text": null,
+        "quote": null
+      },
+      "tiebreak_criteria": {
+        "status": "summarized_by_alj",
+        "text": "Priority order among certifications, degrees, credentials, certificates, positions and services for employees sharing a first date of paid service; lottery if a tie remains after all criteria.",
+        "quote": {
+          "quote": "The Resolution also established tie-breaker criteria for determining the relative seniority of certificated employees who first rendered paid service on the same date.",
+          "section": "FACTUAL FINDINGS ¶11"
+        }
+      },
+      "competency_definition": {
+        "status": "unknown",
+        "text": null,
+        "quote": null
+      }
+    }
+  },
+  "outcome": {
+    "overall": "sustained_in_part",
+    "roster": [
+      {
+        "ref": "R1",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R2",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R3",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R4",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R5",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R6",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R7",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R8",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R9",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R10",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R11",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R12",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R13",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R14",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R15",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R16",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R17",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R18",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R19",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R20",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R21",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R22",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R23",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R24",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R25",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R26",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R27",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R28",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R29",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R30",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R31",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R32",
+        "name": null,
+        "source": "appendix"
+      },
+      {
+        "ref": "R33",
+        "name": null,
+        "source": "appendix"
+      }
+    ],
+    "roster_completeness": "partial",
+    "respondent_dispositions": [
+      {
+        "ref": "R1",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "terminated",
+        "detail": null,
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R2",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "terminated",
+        "detail": null,
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R3",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "terminated",
+        "detail": null,
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R4",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "notice_rescinded",
+        "detail": "Accusation dismissed; notice rescinded before decision.",
+        "reason": "District implemented a smaller first-grade class size increase than anticipated, needing six more teachers; these were the most senior with the appropriate credential.",
+        "quote": {
+          "quote": "These withdrawals were based on the District’s decision to implement a smaller increase in class size for first grade than first anticipated, resulting in the need for six more teachers.",
+          "section": "FACTUAL FINDINGS ¶19"
+        }
+      },
+      {
+        "ref": "R5",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "notice_rescinded",
+        "detail": "Accusation dismissed; notice rescinded before decision.",
+        "reason": "District implemented a smaller first-grade class size increase than anticipated, needing six more teachers; these were the most senior with the appropriate credential.",
+        "quote": null
+      },
+      {
+        "ref": "R6",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "notice_rescinded",
+        "detail": "Notice rescinded and accusation dismissed by the order.",
+        "reason": "Most senior multiple-subject credential holders; rescission required by operation of section 44955(b) after two temporary teachers were reclassified probationary with junior seniority dates.",
+        "quote": null
+      },
+      {
+        "ref": "R7",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "notice_rescinded",
+        "detail": "Accusation dismissed; notice rescinded before decision.",
+        "reason": "District implemented a smaller first-grade class size increase than anticipated, needing six more teachers; these were the most senior with the appropriate credential.",
+        "quote": null
+      },
+      {
+        "ref": "R8",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "notice_rescinded",
+        "detail": "Accusation dismissed; notice rescinded before decision.",
+        "reason": "District implemented a smaller first-grade class size increase than anticipated, needing six more teachers; these were the most senior with the appropriate credential.",
+        "quote": null
+      },
+      {
+        "ref": "R9",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "terminated",
+        "detail": null,
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R10",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "terminated",
+        "detail": "Part-time (0.47 FTE) bump claim into full-time junior assignment rejected.",
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R11",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "terminated",
+        "detail": null,
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R12",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "terminated",
+        "detail": null,
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R13",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "terminated",
+        "detail": "Challenge to seniority date rejected for insufficient evidence.",
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R14",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "notice_rescinded",
+        "detail": "Accusation dismissed; notice rescinded before decision.",
+        "reason": "District implemented a smaller first-grade class size increase than anticipated, needing six more teachers; these were the most senior with the appropriate credential.",
+        "quote": null
+      },
+      {
+        "ref": "R15",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "terminated",
+        "detail": null,
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R16",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "terminated",
+        "detail": null,
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R17",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "terminated",
+        "detail": null,
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R18",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "terminated",
+        "detail": null,
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R19",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "notice_rescinded",
+        "detail": "Notice rescinded and accusation dismissed by the order.",
+        "reason": "Most senior multiple-subject credential holders; rescission required by operation of section 44955(b) after two temporary teachers were reclassified probationary with junior seniority dates.",
+        "quote": {
+          "quote": "and except for Respondents [R19] and [R6], and no final layoff notices may be sent to them.",
+          "section": "ORDER"
+        }
+      },
+      {
+        "ref": "R20",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "terminated",
+        "detail": null,
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R21",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "terminated",
+        "detail": "Supplemental-credential bump claim and post-notice BCLAD certification did not remove her from the proceeding.",
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R22",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "terminated",
+        "detail": null,
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R23",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "terminated",
+        "detail": null,
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R24",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "terminated",
+        "detail": null,
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R25",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "terminated",
+        "detail": "Bump claim based on annual middle-school science authorization rejected.",
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R26",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "notice_rescinded",
+        "detail": "Accusation dismissed; notice rescinded before decision.",
+        "reason": "District implemented a smaller first-grade class size increase than anticipated, needing six more teachers; these were the most senior with the appropriate credential.",
+        "quote": null
+      },
+      {
+        "ref": "R27",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "terminated",
+        "detail": null,
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R28",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "accusation_dismissed",
+        "detail": "Never served with a layoff notice; accusation withdrawn.",
+        "reason": "Hired as temporary but contract signed after first date of paid service; reclassified probationary with seniority date August 25, 2008.",
+        "quote": {
+          "quote": "should have been classified as probationary employees with the seniority date of August 25, 2008, because their contracts were not signed until after their first date of paid service",
+          "section": "FACTUAL FINDINGS ¶19"
+        }
+      },
+      {
+        "ref": "R29",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 2
+        },
+        "disposition": "accusation_dismissed",
+        "detail": "Never served with a layoff notice; accusation withdrawn.",
+        "reason": "Hired as temporary but contract signed after first date of paid service; reclassified probationary with seniority date August 25, 2008.",
+        "quote": null
+      },
+      {
+        "ref": "R30",
+        "representation": {
+          "kind": "none",
+          "counsel_index": null
+        },
+        "disposition": "terminated",
+        "detail": "Counselor; default taken.",
+        "reason": "Did not appear at hearing and was not represented.",
+        "quote": {
+          "quote": "Due to the failure of the counselor Respondents to appear at the hearing, their defaults are noted and the District may proceed against them by issuing final layoff notices.",
+          "section": "LEGAL CONCLUSIONS"
+        }
+      },
+      {
+        "ref": "R31",
+        "representation": {
+          "kind": "none",
+          "counsel_index": null
+        },
+        "disposition": "terminated",
+        "detail": "Counselor; default taken.",
+        "reason": "Did not appear at hearing and was not represented.",
+        "quote": null
+      },
+      {
+        "ref": "R32",
+        "representation": {
+          "kind": "none",
+          "counsel_index": null
+        },
+        "disposition": "terminated",
+        "detail": "Counselor; default taken.",
+        "reason": "Did not appear at hearing and was not represented.",
+        "quote": null
+      },
+      {
+        "ref": "R33",
+        "representation": {
+          "kind": "none",
+          "counsel_index": null
+        },
+        "disposition": "terminated",
+        "detail": "Counselor; default taken.",
+        "reason": "Did not appear at hearing and was not represented.",
+        "quote": null
+      }
+    ]
+  },
+  "holdings": [
+    {
+      "issue": {
+        "category": "seniority",
+        "category_proposed": null,
+        "subtype": "prior temporary or substitute service",
+        "subtype_is_novel": false,
+        "statement": "Whether prior service as a long-term or day-to-day substitute entitled respondents to earlier seniority dates or probationary status."
+      },
+      "raised_by": "respondent",
+      "arguments": [
+        {
+          "party": "respondent",
+          "summary": "Several respondents served as long-term or day-to-day substitutes before their listed first date of paid service and contended the seniority list should be corrected.",
+          "quote": {
+            "quote": "Respondents contend that the seniority list contains errors, that several Respondents are qualified to teach in positions held by someone with less seniority, and that the District’s process of hiring temporary teachers, and then converting some temporary teachers to probationary, was unlawful.",
+            "section": "FACTUAL FINDINGS ¶21"
+          }
+        }
+      ],
+      "facts": [
+        {
+          "summary": "Insufficient evidence was submitted to establish that the seniority list should be changed; R13's individual challenge likewise failed for insufficient evidence.",
+          "quote": {
+            "quote": "did not submit sufficient evidence to conclude that she was entitled to any specific earlier seniority date",
+            "section": "FACTUAL FINDINGS ¶22(a)"
+          }
+        }
+      ],
+      "authorities": [],
+      "reasoning": {
+        "summary": "Earlier substitute service is not treated as probationary service and does not produce an earlier seniority date absent sufficient evidence.",
+        "quotes": [
+          {
+            "quote": "Such earlier service was not entitled to be treated as service in a probationary position or otherwise entitle any Respondent to an earlier seniority date.",
+            "section": "FACTUAL FINDINGS ¶22(a)"
+          }
+        ]
+      },
+      "ruling": {
+        "prevailing_party": "district",
+        "disposition_text": "Seniority list unchanged; challenges rejected.",
+        "remedies": [
+          "none"
+        ],
+        "affected_respondents": [
+          "R13"
+        ]
+      },
+      "summary_style_holding": "Respondents with prior service as long-term or day-to-day substitutes were not entitled to earlier seniority dates or probationary status based on the earlier service without additional evidence. Placentia-Yorba Linda (Rosenman).",
+      "notable": {
+        "flag": false,
+        "note": null
+      }
+    },
+    {
+      "issue": {
+        "category": "bumping",
+        "category_proposed": null,
+        "subtype": "credential scope — annual board authorization",
+        "subtype_is_novel": false,
+        "statement": "Whether a teacher holding an annual board authorization to teach middle school science could bump junior teachers teaching high school science."
+      },
+      "raised_by": "respondent",
+      "arguments": [
+        {
+          "party": "respondent",
+          "summary": "R25 holds a board authorization to teach science at the middle school level, based on college credits, and claimed the right to displace more junior science teachers.",
+          "quote": null
+        }
+      ],
+      "facts": [
+        {
+          "summary": "The authorization lasts one year at a time, and R25 did not establish she would qualify for an authorization covering the high school chemistry or biology classes taught by more junior employees.",
+          "quote": {
+            "quote": "which authorization is based upon college credits she has earned but lasts for only one year at a time",
+            "section": "FACTUAL FINDINGS ¶22(b)"
+          }
+        }
+      ],
+      "authorities": [
+        {
+          "raw_cite": "Education Code section 44263",
+          "type": "statute",
+          "canonical": null,
+          "role": "relied_on",
+          "proposition": "Board authorizations to teach outside the credential are annual and must be renewed."
+        }
+      ],
+      "reasoning": {
+        "summary": "An annual authorization that must be renewed, and that would not extend to grades ten through twelve in any event, cannot support bumping the junior teachers in those assignments.",
+        "quotes": [
+          {
+            "quote": "is an annual authorization that must be renewed and, even if so, would not permit her to teach grades ten through twelve",
+            "section": "LEGAL CONCLUSIONS"
+          }
+        ]
+      },
+      "ruling": {
+        "prevailing_party": "district",
+        "disposition_text": "Bump claim rejected.",
+        "remedies": [
+          "none"
+        ],
+        "affected_respondents": [
+          "R25"
+        ]
+      },
+      "summary_style_holding": "Respondent was not entitled to bump junior employees teaching high school science because her board authorization to teach middle school science, even if renewed, would not permit her to teach grades ten through twelve. Placentia-Yorba Linda (Rosenman).",
+      "notable": {
+        "flag": false,
+        "note": null
+      }
+    },
+    {
+      "issue": {
+        "category": "bumping",
+        "category_proposed": null,
+        "subtype": "credential scope — supplemental credential grade limits",
+        "subtype_is_novel": false,
+        "statement": "Whether a supplemental history credential limited to ninth grade permitted bumping junior teachers assigned to grades ten through twelve."
+      },
+      "raised_by": "respondent",
+      "arguments": [],
+      "facts": [
+        {
+          "summary": "R21's supplemental credential in history permits teaching through ninth grade; the identified junior history teachers teach higher grades or combined classes including higher grades.",
+          "quote": {
+            "quote": "However, the more junior history teachers that were identified teach higher grades or a combined class including higher grades",
+            "section": "FACTUAL FINDINGS ¶22(c)"
+          }
+        }
+      ],
+      "authorities": [
+        {
+          "raw_cite": "California Code of Regulations, title 5, section 80057.5",
+          "type": "regulation",
+          "canonical": null,
+          "role": "relied_on",
+          "proposition": "A supplemental credential in history authorizes teaching only through ninth grade."
+        }
+      ],
+      "reasoning": {
+        "summary": "The credential's grade-level limit controls competency to bump; assignments including grades ten through twelve are outside it.",
+        "quotes": [
+          {
+            "quote": "supplemental history credential is limited to teaching up to ninth grade under California Code of Regulations, title 5, section 80057.5",
+            "section": "LEGAL CONCLUSIONS"
+          }
+        ]
+      },
+      "ruling": {
+        "prevailing_party": "district",
+        "disposition_text": "Bump claim rejected.",
+        "remedies": [
+          "none"
+        ],
+        "affected_respondents": [
+          "R21"
+        ]
+      },
+      "summary_style_holding": "Respondent with a supplemental history credential permitting her to teach through ninth grade was not allowed to bump junior teachers assigned to grades ten through twelve or combined classes including those grades. Placentia-Yorba Linda (Rosenman).",
+      "notable": {
+        "flag": false,
+        "note": null
+      }
+    },
+    {
+      "issue": {
+        "category": "credentials",
+        "category_proposed": null,
+        "subtype": "late receipt of credential or certification",
+        "subtype_is_novel": false,
+        "statement": "What effect a BCLAD certification received after service of layoff notices has on the layoff proceeding."
+      },
+      "raised_by": "respondent",
+      "arguments": [],
+      "facts": [
+        {
+          "summary": "R21 received her BCLAD certification on April 21, 2009, after layoff notices were served.",
+          "quote": {
+            "quote": "[R21] received her BCLAD certification on April 21, 2009, after layoff notices were served.",
+            "section": "FACTUAL FINDINGS ¶22(c)"
+          }
+        }
+      ],
+      "authorities": [],
+      "reasoning": {
+        "summary": "The district should consider updating its records, but even if the certification benefited her under the tie-breaking criteria, she would remain in the proceeding.",
+        "quotes": [
+          {
+            "quote": "Even if [R21] receives benefit due to this certification in the application of tie-breaking criteria, she would still be included in these proceedings.",
+            "section": "FACTUAL FINDINGS ¶22(c)"
+          }
+        ]
+      },
+      "ruling": {
+        "prevailing_party": "district",
+        "disposition_text": "Records-update recommendation only; respondent remains in the proceeding.",
+        "remedies": [
+          "other"
+        ],
+        "affected_respondents": [
+          "R21"
+        ]
+      },
+      "summary_style_holding": "Where respondent received BCLAD certification after layoff notices had been served, the ALJ recommended the district update its records and, if necessary, apply tie-breaking criteria, but the late certification did not remove her from the proceeding. Placentia-Yorba Linda (Rosenman).",
+      "notable": {
+        "flag": true,
+        "note": "The 2009 gold volume files this holding under BOTH Credentials and Criteria For Breaking Seniority Ties — a live example of many-to-many category mapping."
+      }
+    },
+    {
+      "issue": {
+        "category": "bumping",
+        "category_proposed": null,
+        "subtype": "part-time employee bumping full-time assignment",
+        "subtype_is_novel": false,
+        "statement": "Whether a part-time employee with the appropriate credential may bump a junior employee holding a full-time assignment."
+      },
+      "raised_by": "respondent",
+      "arguments": [],
+      "facts": [
+        {
+          "summary": "R10 holds a supplemental Spanish credential and could teach the assignment of a junior full-time employee, but she presently teaches a 0.47 FTE part-time assignment.",
+          "quote": {
+            "quote": "has a supplemental credential in Spanish and could teach in the assignment of [E2], a more junior employee",
+            "section": "FACTUAL FINDINGS ¶22(d)"
+          }
+        }
+      ],
+      "authorities": [
+        {
+          "raw_cite": "Hildebrandt v. St. Helena Unified School Dist. (2009) 172 Cal.App.4th 334",
+          "type": "case",
+          "canonical": null,
+          "role": "relied_on",
+          "proposition": "A district has discretion to retain a junior full-time employee over a senior part-time employee."
+        }
+      ],
+      "reasoning": {
+        "summary": "The district may retain the junior full-time employee; a part-time employee cannot bump into the full-time assignment.",
+        "quotes": [
+          {
+            "quote": "as a part-time employee, cannot bump [E2 — sic, see notable], who is a more junior, but full-time, employee that the District has the discretion to retain",
+            "section": "LEGAL CONCLUSIONS"
+          }
+        ]
+      },
+      "ruling": {
+        "prevailing_party": "district",
+        "disposition_text": "Bump claim rejected.",
+        "remedies": [
+          "none"
+        ],
+        "affected_respondents": [
+          "R10"
+        ]
+      },
+      "summary_style_holding": "District properly disallowed a part-time employee with appropriate credentials from bumping into a junior employee's full-time assignment. Placentia-Yorba Linda (Rosenman).",
+      "notable": {
+        "flag": true,
+        "note": "Source error: the Legal Conclusions call the junior employee '[E2 — sic, see notable]' while the Factual Findings identify him as [E2] — apparent conflation with respondent [R10]'s surname. Decision-text errors of this kind must survive extraction verbatim and be flagged, not silently corrected."
+      }
+    },
+    {
+      "issue": {
+        "category": "skipping",
+        "category_proposed": null,
+        "subtype": "special training and experience",
+        "subtype_is_novel": false,
+        "statement": "Whether the district established grounds to skip a junior teacher in the elementary independent studies program whom 18 senior respondents sought to displace."
+      },
+      "raised_by": "respondent",
+      "arguments": [
+        {
+          "party": "respondent",
+          "summary": "All 18 testifying respondents hold multiple subject credentials and stated they would take the junior teacher's Language Arts assignment in the Elementary Independent Studies Program if offered.",
+          "quote": {
+            "quote": "All 18 Respondents who testified hold multiple subject credentials and stated that, if it were offered to them, they would take the assignment of [E1]",
+            "section": "FACTUAL FINDINGS ¶22(d)"
+          }
+        }
+      ],
+      "facts": [
+        {
+          "summary": "The district sought to skip the junior teacher due to her special training and experience; insufficient evidence showed the respondents held the appropriate credential for the position's nature.",
+          "quote": {
+            "quote": "There was insufficient evidence to conclude that these 18 Respondents hold the appropriate credential to bump [E1] from her position",
+            "section": "FACTUAL FINDINGS ¶22(d)"
+          }
+        }
+      ],
+      "authorities": [
+        {
+          "raw_cite": "Poppers v. Tamalpais Union High School District (1986) 184 Cal.App.3d 399",
+          "type": "case",
+          "canonical": null,
+          "role": "relied_on",
+          "proposition": "Junior teachers may be given retention priority over senior teachers if they possess superior skills or capabilities their senior counterparts lack."
+        },
+        {
+          "raw_cite": "Santa Clara Federation of Teachers v. Governing Board (1981) 116 Cal.App.3d 831",
+          "type": "case",
+          "canonical": null,
+          "role": "relied_on",
+          "proposition": "Same."
+        }
+      ],
+      "reasoning": {
+        "summary": "No respondent established the credential required to bump the skipped teacher, and the district established grounds for the skip.",
+        "quotes": [
+          {
+            "quote": "No Respondent can bump [E1] from her position, and she was properly skipped by the District.",
+            "section": "LEGAL CONCLUSIONS"
+          }
+        ]
+      },
+      "ruling": {
+        "prevailing_party": "district",
+        "disposition_text": "Skip upheld.",
+        "remedies": [
+          "none"
+        ],
+        "affected_respondents": []
+      },
+      "summary_style_holding": "District properly skipped a junior teacher in its elementary independent studies program based on her special training and experience, where eighteen senior multiple-subject credential holders failed to establish they held the appropriate credential to bump her. Placentia-Yorba Linda (Rosenman).",
+      "notable": {
+        "flag": true,
+        "note": "Not included in the 2009 gold volume — an over-recovery candidate (editorial omission, not extraction error)."
+      }
+    },
+    {
+      "issue": {
+        "category": "temporary_employees",
+        "category_proposed": null,
+        "subtype": "misclassification — Kavanaugh conversion to probationary",
+        "subtype_is_novel": false,
+        "statement": "Whether two teachers hired as temporary employees were properly reclassified as probationary, and the effect of their junior seniority dates on senior credential holders."
+      },
+      "raised_by": "district",
+      "arguments": [],
+      "facts": [
+        {
+          "summary": "The district determined the two teachers' contracts were not signed until after their first date of paid service and reclassified them probationary with seniority date August 25, 2008, withdrawing their accusations.",
+          "quote": null
+        },
+        {
+          "summary": "During February-March 2009 the board converted multiple temporary hires to probationary after determining temporary teachers exceeded the number of leave-protected positions.",
+          "quote": {
+            "quote": "the Board changed the classification of teachers that had been hired in temporary positions to probationary",
+            "section": "FACTUAL FINDINGS ¶23"
+          }
+        }
+      ],
+      "authorities": [
+        {
+          "raw_cite": "Education Code section 44916",
+          "type": "statute",
+          "canonical": null,
+          "role": "relied_on",
+          "proposition": "An employee is probationary unless given a written statement of temporary status at the time of employment."
+        },
+        {
+          "raw_cite": "Kavanaugh v. West Sonoma County Union High School District (2003) 29 Cal.4th 911",
+          "type": "case",
+          "canonical": null,
+          "role": "relied_on",
+          "proposition": "Absent the written statement, the employee is probationary."
+        }
+      ],
+      "reasoning": {
+        "summary": "Once the two were probationary with August 2008 seniority, section 44955(b) required rescission as to the two most senior holders of the same multiple subject credential.",
+        "quotes": [
+          {
+            "quote": "Their status as more junior to other holders of a multiple subject credential means layoff notices must be rescinded as to the two most senior holders of that same credential, by operation of section 44955, subdivision (b).",
+            "section": "LEGAL CONCLUSIONS"
+          }
+        ]
+      },
+      "ruling": {
+        "prevailing_party": "respondent",
+        "disposition_text": "Notices rescinded and accusations dismissed as to the two most senior multiple-subject credential holders (R19, R6).",
+        "remedies": [
+          "rescind_notice",
+          "dismiss_accusation"
+        ],
+        "affected_respondents": [
+          "R19",
+          "R6",
+          "R28",
+          "R29"
+        ]
+      },
+      "summary_style_holding": "Where two teachers hired as temporary employees did not sign contracts until after their first date of paid service, they were probationary employees under section 44916 and Kavanaugh, and their junior seniority dates required rescission of layoff notices to the two most senior holders of the same multiple subject credential by operation of section 44955(b). Placentia-Yorba Linda (Rosenman).",
+      "notable": {
+        "flag": true,
+        "note": "Respondent win flowing to employees OTHER than the misclassified pair — the conversion cascaded relief to the two most senior credential-mates. Gold files this under Temporary Teachers without the case number appended."
+      }
+    },
+    {
+      "issue": {
+        "category": "procedural_issues",
+        "category_proposed": null,
+        "subtype": "jurisdiction — scope of layoff proceeding",
+        "subtype_is_novel": false,
+        "statement": "Whether the layoff proceeding can remedy the district's allegedly unlawful practice of hiring more temporary teachers than permitted by law."
+      },
+      "raised_by": "respondent",
+      "arguments": [
+        {
+          "party": "respondent",
+          "summary": "The district's process of hiring temporary teachers and converting some to probationary was unlawful, and respondents should be retained as a remedy.",
+          "quote": null
+        }
+      ],
+      "facts": [],
+      "authorities": [
+        {
+          "raw_cite": "Bakersfield Elementary Teachers Ass’n v. Bakersfield City School Dist. (2006) 145 Cal.App.4th 1260",
+          "type": "case",
+          "canonical": null,
+          "role": "relied_on",
+          "proposition": "Substitute and temporary classifications are narrowly defined and strictly interpreted because they lack statutory procedural due process."
+        }
+      ],
+      "reasoning": {
+        "summary": "The proceeding addresses rights of probationary and permanent employees under section 44955; there is no jurisdiction to remedy temporary-classification practices, which belong in writ proceedings.",
+        "quotes": [
+          {
+            "quote": "There is no jurisdiction here to address the issue raised by Respondents in the manner they suggest.",
+            "section": "LEGAL CONCLUSIONS"
+          },
+          {
+            "quote": "Temporary employees who feel they have been categorized incorrectly may bring writ proceedings in the courts of appropriate jurisdiction.",
+            "section": "LEGAL CONCLUSIONS"
+          }
+        ]
+      },
+      "ruling": {
+        "prevailing_party": "district",
+        "disposition_text": "Contention rejected for lack of jurisdiction.",
+        "remedies": [
+          "none"
+        ],
+        "affected_respondents": []
+      },
+      "summary_style_holding": "Respondents' contention that the district should be ordered to retain them because it hired more temporary teachers than allowed by law was rejected; the layoff proceeding has no jurisdiction over temporary classification practices, which must be challenged by writ. Placentia-Yorba Linda (Rosenman).",
+      "notable": {
+        "flag": true,
+        "note": "Not included in the 2009 gold volume — over-recovery candidate."
+      }
+    },
+    {
+      "issue": {
+        "category": "calculations_ada_fte",
+        "category_proposed": null,
+        "subtype": "FTE-to-notice correspondence",
+        "subtype_is_novel": false,
+        "statement": "Unexplained discrepancy between the FTE positions authorized for reduction and the number of employees served with notices."
+      },
+      "raised_by": "alj_sua_sponte",
+      "arguments": [],
+      "facts": [
+        {
+          "summary": "The board authorized 91.1 FTE of reductions; the categories at issue total 64.5 FTE; 37 employees were served. The ALJ noted insufficient evidence to explain the difference.",
+          "quote": {
+            "quote": "there was insufficient evidence to explain the difference between FTEs in those categories (64.5) and the number of employees served (37)",
+            "section": "FACTUAL FINDINGS n.1"
+          }
+        }
+      ],
+      "authorities": [],
+      "reasoning": {
+        "summary": null,
+        "quotes": []
+      },
+      "ruling": {
+        "prevailing_party": "none_ruled",
+        "disposition_text": "Observation in footnote; no ruling made or relief granted.",
+        "remedies": [
+          "none"
+        ],
+        "affected_respondents": []
+      },
+      "summary_style_holding": null,
+      "notable": {
+        "flag": true,
+        "note": "ALJ flagged but did not resolve the FTE/notice discrepancy — the kind of unprosecuted opening the compilations' editorial notes existed to surface."
+      }
+    }
+  ],
+  "related_proceedings": [],
+  "full_text": null,
+  "provenance": {
+    "source_files": [
+      {
+        "path": "download (2)/Placentia-Yorba Linda USD - 2009030040.RTF",
+        "sha1": "5c8321c01e76365c3b133477676194f9cf65c8b4",
+        "kind": "native_rtf"
+      }
+    ],
+    "text_sha1": "8edd650db306cf5d640d873538da1cf0efa293e1",
+    "passes": [
+      {
+        "name": "hand_filled_example",
+        "model": null,
+        "prompt_version": null,
+        "run_at": "2026-06-05T00:00:00Z",
+        "notes": "Hand-filled contested exemplar. Gold linkage: 7 holdings in the 2009 volume (6 with appended case number; Kavanaugh holding under Temporary Teachers without one). Gold cross-files the late-BCLAD holding under both Credentials and Tie-Breaking. Over-recovery candidates absent from gold: [E1] skip, jurisdiction ruling, FTE-discrepancy footnote. Source quirks: Legal Conclusions say '[E2 — sic, see notable]' for the junior employee the Factual Findings call [E2]; Attachment A designation letters partially lost to OCR ([R26]'s 'b' confirmed from FF 19); '2009-20 10' and 'Layof' OCR artifacts preserved in full_text. n_noticed=31 counts respondents served AND requesting hearings; 37 total were served, 33 names on Attachment A ([R28]/[R29] requested hearings without being served)."
+      },
+      {
+        "name": "redaction",
+        "model": null,
+        "prompt_version": null,
+        "run_at": "2026-06-05T00:00:00Z",
+        "notes": "Public exemplar: respondent and non-party employee names replaced with [Rn]/[En] placeholders in all strings, roster names and full_text removed. Quote anchors are NOT verbatim in this copy; the private twin (output/examples/, untracked) holds verbatim anchors verified against text_sha1."
+      }
+    ],
+    "reconciliation": {
+      "status": "human_verified",
+      "disagreements": []
+    }
+  }
+}

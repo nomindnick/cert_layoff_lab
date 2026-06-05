@@ -1,0 +1,356 @@
+{
+  "schema_version": "0.1.0",
+  "identity": {
+    "oah_case_no": "2011030660",
+    "district": {
+      "raw": "Los Altos School District",
+      "canonical": null,
+      "canonical_id": null
+    },
+    "county": "Santa Clara",
+    "alj": {
+      "raw": "Ruth S. Astle",
+      "canonical": null,
+      "canonical_id": null
+    },
+    "decision_date": null,
+    "decision_kind": "proposed_decision",
+    "hearing": {
+      "dates": [
+        "2011-04-21"
+      ],
+      "location": "Los Altos, California"
+    },
+    "school_year_affected": "2011-2012"
+  },
+  "procedure": {
+    "counsel": [
+      {
+        "party": "district",
+        "name": "John R. Yeh",
+        "firm": {
+          "raw": "Dannis, Woliver and Kelley",
+          "canonical": null,
+          "canonical_id": null
+        }
+      },
+      {
+        "party": "respondents",
+        "name": "Christopher E. Schumb",
+        "firm": {
+          "raw": null,
+          "canonical": null,
+          "canonical_id": null
+        }
+      }
+    ],
+    "respondent_counts": {
+      "n_noticed": null,
+      "n_appearing": null,
+      "n_represented": null,
+      "n_self_represented": null,
+      "n_default": null
+    },
+    "stipulated": true,
+    "consolidated_with": []
+  },
+  "board_action": {
+    "resolutions": [
+      {
+        "number": "10/11-17",
+        "date": "2011-03-07"
+      }
+    ],
+    "fte_reduced": {
+      "regular": 42.4,
+      "temporary": null
+    },
+    "services_reduced": [
+      {
+        "description": "42.40 FTE of particular kinds of services per Resolution 10/11-17; the service list (Attachment B to the decision) is not reproduced in the decision text.",
+        "quote": {
+          "quote": "The Board resolved to reduce or discontinue 42.40 Full Time Equivalent particular kinds of services for the 2011-2012 school year.",
+          "section": "FACTUAL FINDINGS"
+        }
+      }
+    ],
+    "statutory_basis": "pks",
+    "artifacts": {
+      "skip_criteria": {
+        "status": "unknown",
+        "text": null,
+        "quote": null
+      },
+      "tiebreak_criteria": {
+        "status": "unknown",
+        "text": null,
+        "quote": null
+      },
+      "competency_definition": {
+        "status": "unknown",
+        "text": null,
+        "quote": null
+      }
+    }
+  },
+  "outcome": {
+    "overall": "sustained_in_part",
+    "roster": [
+      {
+        "ref": "R1",
+        "name": null,
+        "source": "body"
+      },
+      {
+        "ref": "R2",
+        "name": null,
+        "source": "body"
+      },
+      {
+        "ref": "R3",
+        "name": null,
+        "source": "body"
+      },
+      {
+        "ref": "R4",
+        "name": null,
+        "source": "body"
+      },
+      {
+        "ref": "R5",
+        "name": null,
+        "source": "body"
+      },
+      {
+        "ref": "R6",
+        "name": null,
+        "source": "body"
+      },
+      {
+        "ref": "R7",
+        "name": null,
+        "source": "body"
+      },
+      {
+        "ref": "R8",
+        "name": null,
+        "source": "body"
+      },
+      {
+        "ref": "R9",
+        "name": null,
+        "source": "body"
+      },
+      {
+        "ref": "R10",
+        "name": null,
+        "source": "body"
+      },
+      {
+        "ref": "R11",
+        "name": null,
+        "source": "body"
+      },
+      {
+        "ref": "R12",
+        "name": null,
+        "source": "body"
+      },
+      {
+        "ref": "R13",
+        "name": null,
+        "source": "body"
+      }
+    ],
+    "roster_completeness": "partial",
+    "respondent_dispositions": [
+      {
+        "ref": "R1",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 1
+        },
+        "disposition": "notice_rescinded",
+        "detail": "Rescinded per the parties' stipulation resolving all factual matters.",
+        "reason": null,
+        "quote": {
+          "quote": "The Lay-off notices issued to [R1], [R2], [R3], [R4], [R5], [R6], [R7], [R8], [R9], and [R10] are rescinded.",
+          "section": "ORDER"
+        }
+      },
+      {
+        "ref": "R2",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 1
+        },
+        "disposition": "notice_rescinded",
+        "detail": "Rescinded per the parties' stipulation resolving all factual matters.",
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R3",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 1
+        },
+        "disposition": "notice_rescinded",
+        "detail": "Rescinded per the parties' stipulation resolving all factual matters.",
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R4",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 1
+        },
+        "disposition": "notice_rescinded",
+        "detail": "Rescinded per the parties' stipulation resolving all factual matters.",
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R5",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 1
+        },
+        "disposition": "notice_rescinded",
+        "detail": "Rescinded per the parties' stipulation resolving all factual matters.",
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R6",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 1
+        },
+        "disposition": "notice_rescinded",
+        "detail": "Rescinded per the parties' stipulation resolving all factual matters.",
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R7",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 1
+        },
+        "disposition": "notice_rescinded",
+        "detail": "Rescinded per the parties' stipulation resolving all factual matters.",
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R8",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 1
+        },
+        "disposition": "notice_rescinded",
+        "detail": "Rescinded per the parties' stipulation resolving all factual matters.",
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R9",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 1
+        },
+        "disposition": "notice_rescinded",
+        "detail": "Rescinded per the parties' stipulation resolving all factual matters.",
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R10",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 1
+        },
+        "disposition": "notice_rescinded",
+        "detail": "Rescinded per the parties' stipulation resolving all factual matters.",
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R11",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 1
+        },
+        "disposition": "partially_terminated",
+        "detail": "Retains .373 FTE of position per stipulation.",
+        "reason": null,
+        "quote": {
+          "quote": "[R11] retains .373 FTE of his position, [R12] retains .5 FTE of her position, [R13] retains .167 FTE of her position.",
+          "section": "ORDER"
+        }
+      },
+      {
+        "ref": "R12",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 1
+        },
+        "disposition": "partially_terminated",
+        "detail": "Retains .5 FTE of position per stipulation.",
+        "reason": null,
+        "quote": null
+      },
+      {
+        "ref": "R13",
+        "representation": {
+          "kind": "firm",
+          "counsel_index": 1
+        },
+        "disposition": "partially_terminated",
+        "detail": "Retains .167 FTE of position per stipulation.",
+        "reason": null,
+        "quote": null
+      }
+    ]
+  },
+  "holdings": [],
+  "related_proceedings": [],
+  "full_text": null,
+  "provenance": {
+    "source_files": [
+      {
+        "path": "download (1)/Los Altos SD OAH Case No 2011030660.pdf",
+        "sha1": "06668a3f6da181180e707d20ca8a20e4026b11bb",
+        "kind": "pdf_text"
+      },
+      {
+        "path": "download (1)/Los Altos SD OAH No 2011030660.RTF",
+        "sha1": "f92db5f78157b9ed9a43eff499459534f98d6f5e",
+        "kind": "native_rtf"
+      }
+    ],
+    "text_sha1": "318ba4c5060711a0aefc742f7cecc9fccdd1bd83",
+    "passes": [
+      {
+        "name": "hand_filled_example",
+        "model": null,
+        "prompt_version": null,
+        "run_at": "2026-06-05T00:00:00Z",
+        "notes": "Hand-filled stipulated-thin exemplar: empty holdings[] is the correct record of a fully stipulated matter, while dispositions still carry signal (10 rescissions, 3 partial FTE retentions, remainder terminated en masse). Caption names a lead respondent '[R1], et al.'; Attachment A respondent list and Attachments B/C (resolution, stipulation) are referenced but not reproduced in the decision text, so the roster covers only the 13 respondents named in the ORDER — roster_completeness=partial, and the unnamed remainder ('all other respondents,' terminated) cannot be given refs. DATED line blank in BOTH the native RTF and the PDF twin (checked); decision_date correctly null. The matter was continued twice; hearing date reflects the April 21, 2011 hearing; stipulation filed and matter submitted May 23, 2011."
+      },
+      {
+        "name": "redaction",
+        "model": null,
+        "prompt_version": null,
+        "run_at": "2026-06-05T00:00:00Z",
+        "notes": "Public exemplar: respondent and non-party employee names replaced with [Rn]/[En] placeholders in all strings, roster names and full_text removed. Quote anchors are NOT verbatim in this copy; the private twin (output/examples/, untracked) holds verbatim anchors verified against text_sha1."
+      }
+    ],
+    "reconciliation": {
+      "status": "human_verified",
+      "disagreements": []
+    }
+  }
+}
