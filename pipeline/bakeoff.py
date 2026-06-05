@@ -109,17 +109,33 @@ def call_ollama(model: str, system: str, user: str, fmt: dict | None,
         "messages": [{"role": "system", "content": system},
                      {"role": "user", "content": user}],
         "stream": False,
+        # num_predict is a hard cap, not a target: a model that loops at
+        # temperature 0 gets truncated -> invalid JSON -> scored as failure,
+        # instead of generating forever (observed with num_predict=-1).
         "options": {"temperature": 0, "seed": 7, "num_ctx": 32768,
-                    "num_predict": -1},
+                    "num_predict": 12288},
         "keep_alive": "15m",
     }
     if fmt is not None:
         payload["format"] = fmt
-    req = urllib.request.Request(
-        OLLAMA, data=json.dumps(payload).encode(),
-        headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        return json.loads(resp.read())
+    # Hybrid-reasoning models (qwen3.5 etc.) can burn the entire num_predict
+    # budget in the thinking channel and emit zero content under constrained
+    # decoding. Disable thinking by default; strip the flag for models that
+    # reject it (non-thinking models, and gpt-oss which can't disable).
+    payload["think"] = False
+    for attempt in (0, 1):
+        req = urllib.request.Request(
+            OLLAMA, data=json.dumps(payload).encode(),
+            headers={"Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return json.loads(resp.read())
+        except urllib.error.HTTPError as e:
+            body = e.read().decode(errors="replace")
+            if attempt == 0 and e.code == 400 and "think" in body.lower():
+                payload.pop("think", None)
+                continue
+            raise RuntimeError(f"HTTP {e.code}: {body[:300]}") from e
 
 
 def parse_json_loose(s: str):
