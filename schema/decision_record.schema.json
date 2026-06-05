@@ -1,0 +1,468 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/nomindnick/cert_layoff_lab/schema/decision_record.schema.json",
+  "title": "OAH Certificated Layoff Decision Record",
+  "description": "One JSON per OAH proposed decision (Ed. Code §§ 44949/44955 certificated layoffs). Populated by multiple independent extraction passes writing into the same record; see schema/DESIGN.md for rationale. Version 0.1.x.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "identity", "provenance"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^0\\.1\\.\\d+$",
+      "description": "SemVer. Additive change bumps minor; breaking change bumps major. Spike stays 0.x."
+    },
+
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["oah_case_no", "district", "alj"],
+      "properties": {
+        "oah_case_no": {
+          "type": ["string", "null"],
+          "description": "Modern 10-digit (e.g. 2011030915) or pre-2000 format (e.g. N-16484, L-23565). Null only if genuinely absent from document."
+        },
+        "district": { "$ref": "#/$defs/normalized_entity" },
+        "county": { "type": ["string", "null"] },
+        "alj": { "$ref": "#/$defs/normalized_entity" },
+        "decision_date": { "type": ["string", "null"], "format": "date" },
+        "decision_kind": {
+          "enum": ["proposed_decision", "corrected_or_amended", "order_following_remand", "other", "unknown"]
+        },
+        "hearing": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "dates": { "type": "array", "items": { "type": "string", "format": "date" } },
+            "location": { "type": ["string", "null"] }
+          }
+        },
+        "school_year_affected": {
+          "type": ["string", "null"],
+          "pattern": "^\\d{4}-\\d{4}$",
+          "description": "The school year for which services are terminated (e.g. 2011-2012), NOT the hearing year."
+        }
+      }
+    },
+
+    "procedure": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "counsel": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/counsel_entry" }
+        },
+        "respondent_counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Decision-level aggregates; per-respondent detail lives in outcome.respondent_dispositions.",
+          "properties": {
+            "n_noticed": { "type": ["integer", "null"] },
+            "n_appearing": { "type": ["integer", "null"] },
+            "n_represented": { "type": ["integer", "null"] },
+            "n_self_represented": { "type": ["integer", "null"] },
+            "n_default": { "type": ["integer", "null"] }
+          }
+        },
+        "stipulated": {
+          "type": ["boolean", "null"],
+          "description": "True when the outcome rests wholly or substantially on stipulation rather than contested hearing."
+        },
+        "consolidated_with": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Other OAH case numbers heard together with this matter."
+        }
+      }
+    },
+
+    "board_action": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "resolutions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "number": { "type": ["string", "null"] },
+              "date": { "type": ["string", "null"], "format": "date" }
+            }
+          }
+        },
+        "fte_reduced": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "regular": { "type": ["number", "null"] },
+            "temporary": { "type": ["number", "null"] }
+          }
+        },
+        "services_reduced": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["description"],
+            "properties": {
+              "description": { "type": "string" },
+              "quote": { "$ref": "#/$defs/quote_anchor_or_null" }
+            }
+          }
+        },
+        "statutory_basis": {
+          "enum": ["pks", "ada_decline", "both", "unknown"],
+          "description": "PKS = particular kinds of services (§44955(b)); ADA = decline in average daily attendance."
+        },
+        "artifacts": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Resolution language as it appears in the decision. Decisions quote only what is litigated, so status matters as much as text — see DESIGN.md on missingness bias.",
+          "properties": {
+            "skip_criteria": { "$ref": "#/$defs/resolution_artifact" },
+            "tiebreak_criteria": { "$ref": "#/$defs/resolution_artifact" },
+            "competency_definition": { "$ref": "#/$defs/resolution_artifact" }
+          }
+        }
+      }
+    },
+
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "overall": {
+          "enum": ["sustained", "sustained_in_part", "not_sustained", "unknown"]
+        },
+        "roster": {
+          "type": "array",
+          "description": "PRIVATE-LAYER ONLY: ref->name map for QA against appendices. Any published or derived analytic layer must drop `name` and key on `ref`.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["ref"],
+            "properties": {
+              "ref": { "$ref": "#/$defs/respondent_ref" },
+              "name": { "type": ["string", "null"] },
+              "source": { "enum": ["appendix", "body", "exhibit", "unknown"] }
+            }
+          }
+        },
+        "roster_completeness": {
+          "enum": ["complete", "partial", "unknown"],
+          "description": "Whether the extracted roster plausibly covers all respondents (appendices are the worst-OCR part of decisions; degrade visibly, not silently)."
+        },
+        "respondent_dispositions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/disposition_entry" }
+        }
+      }
+    },
+
+    "holdings": {
+      "type": "array",
+      "description": "The atomic unit: one record per contested issue the ALJ resolved. Empty array on uncontested/default matters is signal, not failure.",
+      "items": { "$ref": "#/$defs/holding" }
+    },
+
+    "related_proceedings": {
+      "type": "array",
+      "description": "In-text mentions of prior/parallel litigation (prior-year layoffs, writs, appeals, consolidated matters). Requires reading the text, hence extracted now; outcomes of those proceedings join on identifiers later.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "description"],
+        "properties": {
+          "kind": { "enum": ["prior_layoff", "superior_court", "appellate", "consolidated_oah", "other"] },
+          "description": { "type": "string" },
+          "identifier": { "type": ["string", "null"] },
+          "quote": { "$ref": "#/$defs/quote_anchor_or_null" }
+        }
+      }
+    },
+
+    "full_text": {
+      "type": ["string", "null"],
+      "description": "Best-available extracted text, making the record self-contained (FPPC pattern). Contains respondent names; private corpus only."
+    },
+
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_files"],
+      "properties": {
+        "source_files": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "sha1"],
+            "properties": {
+              "path": { "type": "string" },
+              "sha1": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+              "kind": { "type": ["string", "null"], "description": "From inventory: native_doc, native_rtf, pdf_text, pdf_scanned, ..." }
+            }
+          }
+        },
+        "text_sha1": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9a-f]{40}$",
+          "description": "SHA1 of full_text; quote anchors are relative to this exact text."
+        },
+        "passes": {
+          "type": "array",
+          "description": "One entry per extraction pass that has written into this record.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "run_at"],
+            "properties": {
+              "name": { "type": "string", "description": "e.g. identity, board_action, dispositions, holdings, artifacts" },
+              "model": { "type": ["string", "null"], "description": "Null for deterministic passes." },
+              "prompt_version": { "type": ["string", "null"] },
+              "run_at": { "type": "string", "format": "date-time" },
+              "notes": { "type": ["string", "null"] }
+            }
+          }
+        },
+        "reconciliation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": { "enum": ["single_run", "reconciled", "disputed", "human_verified"] },
+            "disagreements": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["field_path"],
+                "properties": {
+                  "field_path": { "type": "string" },
+                  "values": { "type": "array" },
+                  "resolution": { "type": ["string", "null"] }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "$defs": {
+    "quote_anchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["quote"],
+      "description": "Span grounding: verbatim string (including OCR errors) locatable in full_text, plus an optional section hint. Strings, not offsets — offsets break on re-OCR.",
+      "properties": {
+        "quote": { "type": "string", "minLength": 10 },
+        "section": { "type": ["string", "null"], "description": "e.g. 'FACTUAL FINDINGS ¶16', 'RECOMMENDATION'" }
+      }
+    },
+    "quote_anchor_or_null": {
+      "oneOf": [ { "$ref": "#/$defs/quote_anchor" }, { "type": "null" } ]
+    },
+
+    "normalized_entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["raw"],
+      "description": "Extract-free / normalize-later: extraction fills `raw` verbatim; a separate corpus-wide pass fills canonical fields from curated maps (CDS codes for districts, ALJ roster).",
+      "properties": {
+        "raw": { "type": ["string", "null"] },
+        "canonical": { "type": ["string", "null"] },
+        "canonical_id": { "type": ["string", "null"], "description": "Districts: CDS code. ALJs: roster slug." }
+      }
+    },
+
+    "respondent_ref": {
+      "type": "string",
+      "pattern": "^R\\d+$",
+      "description": "Pseudonymous per-decision respondent reference (R1, R2, ...), assigned in roster order. Analytics key on these, never on names."
+    },
+
+    "counsel_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["party"],
+      "properties": {
+        "party": { "enum": ["district", "respondents", "respondent_individual", "other"] },
+        "name": { "type": ["string", "null"] },
+        "firm": { "$ref": "#/$defs/normalized_entity" }
+      }
+    },
+
+    "resolution_artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "enum": ["quoted_verbatim", "summarized_by_alj", "mentioned_only", "absent", "unknown"]
+        },
+        "text": {
+          "type": ["string", "null"],
+          "description": "Verbatim resolution language when quoted; ALJ's paraphrase when summarized."
+        },
+        "quote": { "$ref": "#/$defs/quote_anchor_or_null" }
+      }
+    },
+
+    "disposition_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "disposition"],
+      "properties": {
+        "ref": { "$ref": "#/$defs/respondent_ref" },
+        "representation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "enum": ["firm", "self", "none", "unknown"] },
+            "counsel_index": {
+              "type": ["integer", "null"],
+              "description": "Index into procedure.counsel when kind=firm."
+            }
+          }
+        },
+        "disposition": {
+          "enum": ["terminated", "partially_terminated", "notice_rescinded", "accusation_dismissed",
+                   "released_temporary", "resigned_or_withdrew", "other", "unknown"]
+        },
+        "detail": { "type": ["string", "null"] },
+        "reason": { "type": ["string", "null"], "description": "Why this respondent's outcome differs (e.g. bumped by senior employee, defective service)." },
+        "quote": { "$ref": "#/$defs/quote_anchor_or_null" }
+      }
+    },
+
+    "issue_category": {
+      "enum": [
+        "procedural_issues", "calculations_ada_fte", "attrition", "pks_reduction",
+        "seniority", "temporary_employees", "categorically_funded", "substitutes",
+        "skipping", "bumping", "assignments_reassignments", "credentials",
+        "competency", "tie_breaking", "domino_theory", "eera_cba_aa",
+        "contractual_issues", "county_office_issues", "discrimination",
+        "adult_education", "reemployment_rights", "miscellaneous", "other"
+      ],
+      "description": "Frozen level-1 vocabulary from the 1979-2017 annual summaries, with one deliberate deviation: the outcome-laden pair pks_allowed/pks_not_allowed merges into outcome-neutral pks_reduction (outcome lives in ruling.prevailing_party; eval maps back deterministically). `other` is the escape hatch — the model proposes, only a human mints."
+    },
+
+    "holding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issue", "ruling"],
+      "properties": {
+        "issue": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["category", "statement"],
+          "properties": {
+            "category": { "$ref": "#/$defs/issue_category" },
+            "category_proposed": {
+              "type": ["string", "null"],
+              "description": "Model's proposed label when category=other; review queue input."
+            },
+            "subtype": {
+              "type": ["string", "null"],
+              "description": "Level-2 vocabulary, seeded from the summaries' letter-subheadings (e.g. seniority/retroactive-seniority, skipping/bclad)."
+            },
+            "subtype_is_novel": {
+              "type": ["boolean", "null"],
+              "description": "True when subtype is not on the seed list; review queue input."
+            },
+            "statement": {
+              "type": "string",
+              "description": "One-sentence neutral framing of the contested question."
+            }
+          }
+        },
+        "raised_by": { "enum": ["respondent", "district", "alj_sua_sponte", "unknown"] },
+        "arguments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["party", "summary"],
+            "properties": {
+              "party": { "enum": ["district", "respondent", "alj"] },
+              "summary": { "type": "string" },
+              "quote": { "$ref": "#/$defs/quote_anchor_or_null" }
+            }
+          }
+        },
+        "facts": {
+          "type": "array",
+          "description": "Facts the ALJ relied on for THIS issue. Redundancy across holdings is acceptable; forced sharing is not.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["summary"],
+            "properties": {
+              "summary": { "type": "string" },
+              "quote": { "$ref": "#/$defs/quote_anchor_or_null" }
+            }
+          }
+        },
+        "authorities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["raw_cite", "type", "role"],
+            "properties": {
+              "raw_cite": { "type": "string", "description": "As it appears, OCR errors included." },
+              "type": { "enum": ["case", "statute", "regulation", "constitution", "cba", "oah_decision", "other"] },
+              "canonical": { "type": ["string", "null"], "description": "Filled by normalization pass, not extraction." },
+              "role": { "enum": ["relied_on", "distinguished", "rejected", "cited_in_passing"] },
+              "proposition": { "type": ["string", "null"], "description": "What the authority was cited FOR." }
+            }
+          }
+        },
+        "reasoning": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "summary": { "type": ["string", "null"], "description": "The ALJ's reasoning chain for this ruling, compressed." },
+            "quotes": { "type": "array", "items": { "$ref": "#/$defs/quote_anchor" } }
+          }
+        },
+        "ruling": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["prevailing_party"],
+          "properties": {
+            "prevailing_party": { "enum": ["district", "respondent", "mixed", "none_ruled"] },
+            "disposition_text": { "type": ["string", "null"] },
+            "remedies": {
+              "type": "array",
+              "items": {
+                "enum": ["none", "rescind_notice", "dismiss_accusation", "correct_seniority_list",
+                         "permit_bump", "retain_employee", "other"]
+              }
+            },
+            "affected_respondents": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/respondent_ref" }
+            }
+          }
+        },
+        "summary_style_holding": {
+          "type": ["string", "null"],
+          "description": "One-paragraph rendering in the annual-volume house style, ending with 'District (ALJ)'. Makes rung 2 a GROUP BY and eval a like-for-like comparison."
+        },
+        "notable": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "flag": { "type": "boolean" },
+            "note": { "type": ["string", "null"], "description": "Editorial observation in the compilations' tradition ('ALJ appears to conflate competent with special training and experience')." }
+          }
+        }
+      }
+    }
+  }
+}
