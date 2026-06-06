@@ -50,11 +50,18 @@ def load_record_schema() -> dict:
     return json.loads((ROOT / "schema" / "decision_record.schema.json").read_text())
 
 
-def holdings_pass_schema() -> dict:
+def holdings_pass_schema(strict_quotes: bool = False) -> dict:
     """Holdings + related_proceedings only; affected_respondents become names
-    (ref assignment happens at merge time, once a roster exists)."""
+    (ref assignment happens at merge time, once a roster exists).
+
+    strict_quotes (prompt v2+): facts[].quote is required and non-null —
+    constrained decoding then forces an anchor for every asserted fact."""
     rec = load_record_schema()
     defs = copy.deepcopy(rec["$defs"])
+    if strict_quotes:
+        facts = defs["holding"]["properties"]["facts"]["items"]
+        facts["required"] = ["summary", "quote"]
+        facts["properties"]["quote"] = {"$ref": "#/$defs/quote_anchor"}
     ruling = defs["holding"]["properties"]["ruling"]
     del ruling["properties"]["affected_respondents"]
     ruling["properties"]["affected_respondents_names"] = {
@@ -167,14 +174,15 @@ def parse_json_loose(s: str):
         raise
 
 
-def run_matrix(models, cases, mode, force=False):
+def run_matrix(models, cases, mode, force=False, prompt_version=PROMPT_VERSION):
     RUNS.mkdir(parents=True, exist_ok=True)
-    system = (ROOT / "pipeline" / "prompts" / f"{PROMPT_VERSION}.txt").read_text()
+    system = (ROOT / "pipeline" / "prompts" / f"{prompt_version}.txt").read_text()
+    strict = prompt_version != "holdings_v1"
     if mode == "mega":
         system += MEGA_EXTRA
         fmt = mega_pass_schema()
     else:
-        fmt = holdings_pass_schema()
+        fmt = holdings_pass_schema(strict_quotes=strict)
     if mode == "unconstrained":
         send_fmt = None
         system += ("\nOutput ONLY the JSON object, no prose, no code fences, "
@@ -184,16 +192,18 @@ def run_matrix(models, cases, mode, force=False):
 
     for model in models:                      # outer loop: load each model once
         for case in cases:
-            out = RUNS / f"{model.replace(':', '_').replace('/', '_')}__{case}__{mode}.json"
+            safe = model.replace(':', '_').replace('/', '_')
+            suffix = "" if prompt_version == "holdings_v1" else f"__{prompt_version}"
+            out = RUNS / f"{safe}__{case}__{mode}{suffix}.json"
             if out.exists() and not force:
                 print(f"skip (exists): {out.name}")
                 continue
             fixture = json.loads((ROOT / "output" / "examples" / f"{case}.json").read_text())
             user = "DECISION TEXT:\n\n" + fixture["full_text"]
-            print(f"run: {model} / {case} / {mode} ...", flush=True)
+            print(f"run: {model} / {case} / {mode} / {prompt_version} ...", flush=True)
             t0 = time.time()
             rec = {"model": model, "case": case, "mode": mode,
-                   "prompt_version": PROMPT_VERSION}
+                   "prompt_version": prompt_version}
             try:
                 resp = call_ollama(model, system, user, send_fmt)
                 rec["duration_s"] = round(time.time() - t0, 1)
@@ -285,16 +295,19 @@ def match_holdings(model_hs: list, fixture_hs: list, thresh=0.35):
 
 
 def score():
-    validator = Draft202012Validator(holdings_pass_schema())
+    validators = {False: Draft202012Validator(holdings_pass_schema(False)),
+                  True: Draft202012Validator(holdings_pass_schema(True))}
     fixtures = {c: json.loads((ROOT / "output" / "examples" / f"{c}.json").read_text())
                 for c in FIXTURES}
     rows = []
     for f in sorted(RUNS.glob("*.json")):
         run = json.loads(f.read_text())
         case, mode = run["case"], run["mode"]
+        pv = run.get("prompt_version", "holdings_v1")
+        validator = validators[pv != "holdings_v1"]
         fixture = fixtures[case]
         row = {"model": run["model"], "case": FIXTURES[case], "mode": mode,
-               "dur": run.get("duration_s")}
+               "prompt": pv.replace("holdings_", ""), "dur": run.get("duration_s")}
         parsed = run.get("parsed")
         if parsed is None:
             row.update(valid="ERR", err=(run.get("run_error") or run.get("parse_error", ""))[:60])
@@ -335,11 +348,12 @@ def score():
         rows.append(row)
 
     lines = ["# Bake-off report", "",
-             "| model | case | mode | valid | holdings | recall | precision | cat | anchors exact | dur(s) |",
-             "|---|---|---|---|---|---|---|---|---|---|"]
-    for r in sorted(rows, key=lambda r: (r["mode"], r["model"], r["case"])):
-        lines.append("| {model} | {case} | {mode} | {valid} | {nh} | {rec} | {prec} | {cat} | {anc} | {dur} |".format(
-            model=r["model"], case=r["case"], mode=r["mode"], valid=r.get("valid", "-"),
+             "| model | case | mode | prompt | valid | holdings | recall | precision | cat | anchors exact | dur(s) |",
+             "|---|---|---|---|---|---|---|---|---|---|---|"]
+    for r in sorted(rows, key=lambda r: (r["prompt"], r["mode"], r["model"], r["case"])):
+        lines.append("| {model} | {case} | {mode} | {pv} | {valid} | {nh} | {rec} | {prec} | {cat} | {anc} | {dur} |".format(
+            model=r["model"], case=r["case"], mode=r["mode"], pv=r["prompt"],
+            valid=r.get("valid", "-"),
             nh=r.get("n_holdings", "-"), rec=r.get("recall", "-"),
             prec=r.get("precision", "-"), cat=r.get("cat_acc", "-"),
             anc=r.get("anchors", r.get("err", "-")), dur=r.get("dur", "-")))
@@ -361,11 +375,12 @@ def main():
     ap.add_argument("--cases", default=",".join(FIXTURES))
     ap.add_argument("--mode", default="constrained",
                     choices=["constrained", "unconstrained", "mega"])
+    ap.add_argument("--prompt-version", default=PROMPT_VERSION)
     ap.add_argument("--force", action="store_true")
     args = ap.parse_args()
     if args.cmd == "run":
         run_matrix(args.models.split(","), args.cases.split(","), args.mode,
-                   args.force)
+                   args.force, args.prompt_version)
         score()
     else:
         score()
