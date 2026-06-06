@@ -37,7 +37,11 @@ FIXTURES = {
 DEFAULT_MODELS = ["qwen3.5:9b", "gemma4:31b", "qwen3.6:27b",
                   "gpt-oss:120b", "qwen3.5:122b", "mistral-medium-3.5:128b"]
 PROMPT_VERSION = "holdings_v1"
-OLLAMA = "http://localhost:11434/api/chat"
+# /api/generate, NOT /api/chat: on ollama 0.23.2 the chat endpoint silently
+# ignores `format` (verified empirically — even a flat enum schema and
+# format:"json" pass through unenforced). generate enforces schemas
+# correctly, including $ref/$defs and oneOf.
+OLLAMA = "http://localhost:11434/api/generate"
 
 # ------------------------------------------------------------- pass schemas
 
@@ -106,8 +110,8 @@ def call_ollama(model: str, system: str, user: str, fmt: dict | None,
                 timeout: int = 5400) -> dict:
     payload = {
         "model": model,
-        "messages": [{"role": "system", "content": system},
-                     {"role": "user", "content": user}],
+        "system": system,
+        "prompt": user,
         "stream": False,
         # num_predict is a hard cap, not a target: a model that loops at
         # temperature 0 gets truncated -> invalid JSON -> scored as failure,
@@ -180,7 +184,7 @@ def run_matrix(models, cases, mode, force=False):
             try:
                 resp = call_ollama(model, system, user, send_fmt)
                 rec["duration_s"] = round(time.time() - t0, 1)
-                content = resp.get("message", {}).get("content", "")
+                content = resp.get("response", "")
                 rec["raw"] = content
                 rec["eval_counts"] = {k: resp.get(k) for k in
                                       ("prompt_eval_count", "eval_count")}
