@@ -103,6 +103,19 @@ fields null; they are filled by a later normalization pass. Use null for anythin
 the decision does not state.
 """
 
+def strip_unsupported(schema):
+    """Remove JSON Schema keywords ollama's grammar converter cannot handle.
+    `pattern` crashes the runner with 'failed to load model vocabulary
+    required for format' (verified empirically). The full schema is still
+    used for post-hoc validation, so stripped constraints are checked there."""
+    if isinstance(schema, dict):
+        return {k: strip_unsupported(v) for k, v in schema.items()
+                if k != "pattern"}
+    if isinstance(schema, list):
+        return [strip_unsupported(v) for v in schema]
+    return schema
+
+
 # ------------------------------------------------------------------ runner
 
 
@@ -167,7 +180,7 @@ def run_matrix(models, cases, mode, force=False):
         system += ("\nOutput ONLY the JSON object, no prose, no code fences, "
                    "matching the structure described above.")
     else:
-        send_fmt = fmt
+        send_fmt = strip_unsupported(fmt)
 
     for model in models:                      # outer loop: load each model once
         for case in cases:
