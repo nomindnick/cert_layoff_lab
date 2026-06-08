@@ -48,6 +48,12 @@ PASS_PROMPTS = {"identity": "identity_v1", "dispositions": "dispositions_v1",
                 "holdings": "holdings_v2"}
 SCHEMA_VERSION = "0.1.0"
 
+# Per-pass generation budget overrides (else call_ollama defaults 12288/32768).
+# Dispositions enumerates one entry per respondent; mass-layoff appendices
+# (200-400 names) overflow the default num_predict mid-array and truncate to
+# invalid JSON, so this pass needs a much larger token budget and context.
+PASS_BUDGET = {"dispositions": {"num_predict": 24576, "num_ctx": 49152}}
+
 # ------------------------------------------------------------ pass schemas
 
 
@@ -157,7 +163,8 @@ def run_extractions(cases, models):
                "source_sha1": c["best"]["sha1"]}
         try:
             resp = call_ollama(model, prompts[pass_name],
-                               "DECISION TEXT:\n\n" + text, schemas[pass_name])
+                               "DECISION TEXT:\n\n" + text, schemas[pass_name],
+                               **PASS_BUDGET.get(pass_name, {}))
             rec["duration_s"] = round(time.time() - t0, 1)
             try:
                 rec["parsed"] = parse_json_loose(resp.get("response", ""))
@@ -234,12 +241,25 @@ def merge_case(case, models, validator, run_at):
         return d.get("parsed")
 
     parts = {p: load(p, primary_m) for p in PASS_PROMPTS}
-    if any(v is None for v in parts.values()):
-        return None, "missing primary pass output"
     sec = ({p: load(p, secondary_m) for p in PASS_PROMPTS}
            if secondary_m else {p: None for p in PASS_PROMPTS})
 
+    # Primary-pass rescue: if the primary model failed to produce parseable
+    # output for a pass (e.g. num_predict overflow on a mega-roster, or a
+    # degenerate quote-anchor repetition loop), fall back to the secondary's
+    # output for that pass and flag it. Consume the secondary so the later
+    # reconciliation doesn't compare the borrowed value against itself.
     disagreements = []
+    for p in PASS_PROMPTS:
+        if parts[p] is None and sec.get(p) is not None:
+            parts[p] = sec[p]
+            sec[p] = None
+            disagreements.append({"field_path": f"pass.{p}",
+                                  "values": [primary_m, secondary_m],
+                                  "resolution": "primary_pass_failed_used_secondary"})
+    if any(v is None for v in parts.values()):
+        return None, "missing primary pass output"
+
     ident = parts["identity"]
     if sec["identity"]:
         ident = walk_disagreements(copy.deepcopy(ident), sec["identity"],

@@ -121,7 +121,48 @@ cases. `alpha_ratio` in the manifest doesn't separate the populations
 (0.92–0.95 in both); a better heuristic is decision-year < 2011 + artifact
 density (mid-word case flips, stray underscores, orphaned numerals).
 
-## 6. Smaller items
+## 6. Don't transcribe name appendices through the LLM (architecture — output side of #1)
+
+Surfaced 2026-06-08 when the 2009 run was resumed after a disconnect: 11 cases
+failed the dispositions pass with unparseable JSON. Not the disconnect, not the
+*input* truncation of #1 — the **output** overflowed. The dispositions pass
+emits one entry per rostered respondent, and mass-layoff appendices carry
+200–400 names. Under grammar-constrained decoding the only way to get invalid
+JSON is length truncation, so the array ran past `num_predict` and closed
+mid-entry. qwen's pretty-printed output (~250 chars/entry vs gemma's ~150
+compact) burned the budget ~2× faster, so even ~15k-char-input cases overflowed
+on a dense appendix.
+
+**Why this is the wrong tool, not just an undersized budget:** transcribing a
+flat alphabetical name table is deterministic-parse work — the same category as
+district/ALJ/firm normalization, which the architecture already does
+deterministically and out-of-band. Spending a 27B model 20–28 minutes to retype
+300 names verbatim is slow, token-bloated, overflow-prone, and a fresh
+hallucination/transposition surface on data that is mechanically extractable.
+The LLM's value is the reasoning-dense holdings pass, not roster stenography.
+
+**Spike patch already applied (gets capstone numbers, NOT the production
+answer):**
+- `call_ollama` parameterized `num_predict`/`num_ctx`/`seed` (defaults
+  unchanged); dispositions pass bumped to 24576/49152 via `PASS_BUDGET` in
+  `extract.py`.
+- Merge falls back to the secondary model when a primary pass fails to parse,
+  logged as `provenance.reconciliation … primary_pass_failed_used_secondary`
+  (rescued the single-model failures with no re-run, since gemma's compact JSON
+  stayed under the cap).
+
+**Production fix:** extract the roster deterministically. The appendix is a
+structured name list (caption/appendix/exhibit) — parse it directly into
+`outcome.roster` (and the `R1..Rn` refs) without a model call. Reserve the
+dispositions *pass* for the per-respondent disposition/reason/quote on the
+subset the decision actually discusses individually, which is small even in
+mass-layoff cases (most appendix names are an undifferentiated "terminated"
+block covered by a single general order). That collapses the output from
+O(roster) back to O(litigated-respondents), eliminates the overflow class
+entirely, and removes the transcription-error surface. Pairs with #1: dynamic
+`num_ctx` protects the input, deterministic rostering shrinks the output.
+
+## 7. Smaller items
 
 - Raw extraction files don't record ollama's `prompt_eval_count`/
   `eval_count` — capture them in `extract.py`'s raw records. They are the

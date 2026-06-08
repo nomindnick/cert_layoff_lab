@@ -127,7 +127,8 @@ def strip_unsupported(schema):
 
 
 def call_ollama(model: str, system: str, user: str, fmt: dict | None,
-                timeout: int = 5400) -> dict:
+                timeout: int = 5400, num_predict: int = 12288,
+                num_ctx: int = 32768, seed: int = 7) -> dict:
     payload = {
         "model": model,
         "system": system,
@@ -136,8 +137,10 @@ def call_ollama(model: str, system: str, user: str, fmt: dict | None,
         # num_predict is a hard cap, not a target: a model that loops at
         # temperature 0 gets truncated -> invalid JSON -> scored as failure,
         # instead of generating forever (observed with num_predict=-1).
-        "options": {"temperature": 0, "seed": 7, "num_ctx": 32768,
-                    "num_predict": 12288},
+        # Passes whose output scales with respondent count (dispositions over
+        # mass-layoff appendices) override these via extract.py's PASS_BUDGET.
+        "options": {"temperature": 0, "seed": seed, "num_ctx": num_ctx,
+                    "num_predict": num_predict},
         "keep_alive": "15m",
     }
     if fmt is not None:
