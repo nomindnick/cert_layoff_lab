@@ -115,20 +115,20 @@ There are **two distinct corpora**, and both matter:
 
 ### Who wants this and what they've tried
 
-The interested partner is **Gabby**. Teacher layoffs are her #1 priority (the firm also
+The interested partner is **a firm partner**. Teacher layoffs are her #1 priority (the firm also
 has teacher-*discipline* and classified-employee layoff/discipline decisions, which are
 lower priority and explicitly out of scope for now — though note the architecture below
 should clone cleanly to them later; only the issue vocabulary changes).
 
 The project actually predates my firm: it originated with an attorney (now at my firm)
-who ran the annual-summary effort at his prior firm. Gabby's goal is to recreate that
+who ran the annual-summary effort at his prior firm. The partner's goal is to recreate that
 annual-summary work using AI. Her attempts so far: (1) feeding decisions one-by-one
 through a consumer AI product manually — too tedious; (2) batching 1,000+ pages of
 decisions into a consumer AI and asking for a report — didn't work (context overload;
 the model was asked to do extraction, clustering, and synthesis simultaneously across
 a context far beyond where fidelity holds). She stopped there.
 
-**Important:** Gabby doesn't know what's technically possible here, so I don't want her
+**Important:** the partner doesn't know what's technically possible here, so I don't want her
 prior attempts to bound the vision. Treat her stopping point as the floor, not the spec.
 
 ---
@@ -149,7 +149,7 @@ NOT betting the project on the speculative top.
    over time, by ALJ, by district, etc.). Key architectural point: if extraction is
    designed around the *holding* (not the document), this rung is a `GROUP BY` over the
    same structured data that powers rung 1 — a query, not a separate heroic synthesis
-   pass. This is also *why* Gabby's batch approach failed and map-reduce (careful
+   pass. This is also *why* the partner's batch approach failed and map-reduce (careful
    per-decision extraction → deterministic aggregation) succeeds.
 
 3. **System predicts (case insight).** The real use case: an attorney working a live
