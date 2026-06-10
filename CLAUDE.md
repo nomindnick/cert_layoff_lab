@@ -24,11 +24,12 @@ only the operational quick reference.
 | Stage | Script | Output |
 |---|---|---|
 | 0 Inventory | `pipeline/inventory.py` | `output/inventory/` — manifest, coverage map, gold-overlap years |
+| 0b OCR fallback | `pipeline/ocr_pass.py` | `output/cache/text/{sha}.ocr.txt` sidecars for image-only scans (kind `pdf_ocr` after re-running inventory) |
 | 1a Summary taxonomy | `pipeline/summaries_taxonomy.py` | `output/summaries/taxonomy.json`, drift matrix |
-| 1b Summary holdings | `pipeline/summaries_holdings.py` | `output/summaries/holdings.jsonl` (3,678 gold holdings), `case_index.jsonl` |
+| 1b Summary holdings | `pipeline/summaries_holdings.py` | `output/summaries/holdings.jsonl` (gold holdings), `case_index.jsonl` |
 | — Model bake-off | `pipeline/bakeoff.py` | `output/bakeoff/report.md` — scored vs `schema/examples/` fixtures |
-| 2 Extraction | `pipeline/extract.py run --year YYYY` | `output/corpus/decisions/{case}.json` (merged), `raw/` (per case/pass/model cache), `failed/` (quarantine) |
-| 3 Eval | `pipeline/eval_2009.py` | recovery vs gold 2009 volume, over-recovery queue, taxonomy escape rate |
+| 2 Extraction | `pipeline/extract.py run --year YYYY` | `output/corpus/decisions/{case}.json` (merged), `raw/` (per case/pass/model cache), `failed/` (quarantine). `pipeline/roster.py` parses appendix name tables deterministically (verify: `roster.py compare --year YYYY`) |
+| 3 Eval | `pipeline/eval_year.py --year YYYY` | recovery vs that year's gold volume, category-divergence map, over-recovery queue, truncation flags |
 
 Run with `.venv/bin/python` (deps: striprtf, jsonschema; system: poppler, antiword,
 libreoffice). Text extraction is cached by content hash under `output/cache/text/`.

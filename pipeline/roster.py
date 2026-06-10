@@ -332,7 +332,7 @@ def cmd_compare(year: str) -> int:
     n_parsed = n_model_only_big = 0
     print(f"{'case':<12} {'det':>4} {'model':>5} {'∩':>4}  notes")
     for c in select_cases(year, None):
-        text = (CACHE / f"{c['best']['sha1']}.txt").read_text(errors="replace")
+        text = cached_text(c['best']['sha1'], CACHE)
         det = parse_roster(text)
         raw = RAW / f"{c['case_no']}__dispositions__{primary}.json"
         model_names = []

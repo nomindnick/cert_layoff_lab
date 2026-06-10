@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Stage 3 (spike capstone): evaluate extracted 2009 decisions against the
-expert-written 2009 Layoff Decision Summaries (gold).
+"""Stage 3: evaluate an extracted gold-overlap year against the expert-written
+Layoff Decision Summaries volume for that year (gold).
 
 Matches each gold holding to a decision record (by appended OAH case number
 where the volume gives one, else district tokens + ALJ surname), then scores
@@ -13,8 +13,10 @@ Reports:
     volumes are editorial; this is a queue for review, not an error rate)
   - taxonomy escape rate (category=other / novel subtypes)
   - reconciliation stats (model disagreement kinds) and anchor verification
+  - truncation-affected records (provenance pass notes), so context-window
+    loss is never silently scored as extraction failure
 
-Usage: eval_2009.py [--threshold 0.3]
+Usage: eval_year.py [--year 2009] [--threshold 0.3]
 """
 
 import argparse
@@ -79,6 +81,8 @@ def is_uncontested_default(rec):
     out = rec.get("outcome") or {}
     if out.get("overall") == "not_sustained":
         return False
+    if (out.get("general_order") or {}).get("disposition") in RELIEF_DISPOSITIONS:
+        return False
     return not any((d.get("disposition") in RELIEF_DISPOSITIONS)
                    for d in out.get("respondent_dispositions") or [])
 
@@ -91,20 +95,31 @@ def district_tokens(s):
     return tokens(s) - DISTRICT_STOP
 
 
-def load_gold():
+def load_gold(year):
     gold = []
     for line in (ROOT / "output" / "summaries" / "holdings.jsonl").read_text().splitlines():
         h = json.loads(line)
-        if h["volume"] == "2009" and h["cites"]:
+        if h["volume"] == year and h["cites"]:
             gold.append(h)
     return gold
 
 
-def load_decisions():
+def load_decisions(year):
+    """Only decisions whose OAH case-number prefix matches the eval year --
+    the decisions directory holds every extracted year."""
     recs = {}
-    for f in DECISIONS.glob("*.json"):
+    for f in DECISIONS.glob(f"{year}*.json"):
         recs[f.stem] = json.loads(f.read_text())
     return recs
+
+
+def truncation_notes(rec):
+    """Pass-level truncation flags recorded by extract.py telemetry."""
+    notes = []
+    for p in (rec.get("provenance") or {}).get("passes") or []:
+        if p.get("notes") and "truncat" in p["notes"]:
+            notes.append(f"{p['name']}/{p['model']}: {p['notes']}")
+    return notes
 
 
 def match_gold_to_decision(gold, decisions):
@@ -154,24 +169,41 @@ def match_gold_to_decision(gold, decisions):
     return out, ambiguous
 
 
-def holding_sim(gold_h, model_h):
+def holding_jac(gold_h, model_h):
     gt = tokens(gold_h["text"])
     mt = tokens((model_h.get("issue") or {}).get("statement", "")) | \
         tokens(model_h.get("summary_style_holding") or "") | \
         tokens(((model_h.get("reasoning") or {}).get("summary")) or "")
-    jac = len(gt & mt) / len(gt | mt) if (gt or mt) else 0.0
+    return len(gt & mt) / len(gt | mt) if (gt or mt) else 0.0
+
+
+def holding_sim(gold_h, model_h):
+    jac = holding_jac(gold_h, model_h)
     cat = (model_h.get("issue") or {}).get("category")
     return 0.6 * jac + (0.4 if cat in acceptable_cats(gold_h["category_canonical"]) else 0.0)
 
 
+# A miss whose best pure-token overlap clears this bar has the gold holding's
+# CONTENT extracted -- the combined score failed only because our taxonomy
+# filed it under a different category than the volume's editorial section.
+# Those are reported as their own tier (with a gold->ours confusion table),
+# not folded into the headline recovery rate.
+CONTENT_JAC = 0.25
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--year", default="2009")
     ap.add_argument("--threshold", type=float, default=0.3)
     args = ap.parse_args()
 
-    gold = load_gold()
-    decisions = load_decisions()
-    print(f"{len(gold)} gold 2009 holdings; {len(decisions)} extracted decisions")
+    gold = load_gold(args.year)
+    decisions = load_decisions(args.year)
+    if not gold:
+        print(f"no gold holdings for volume '{args.year}' -- is the volume "
+              f"parsed into output/summaries/holdings.jsonl?")
+        return 1
+    print(f"{len(gold)} gold {args.year} holdings; {len(decisions)} extracted decisions")
     gmap, ambiguous = match_gold_to_decision(gold, decisions)
     covered = {gi: (c, kind) for gi, (c, kind, conf) in gmap.items() if c}
 
@@ -192,14 +224,25 @@ def main():
         else:
             scored[gi] = (case_no, kind)
 
-    recovered, missed = [], []
+    recovered, missed, cat_divergent = [], [], []
+    confusion = Counter()
     for gi, (case_no, kind) in scored.items():
         g = gold[gi]
         hs = decisions[case_no].get("holdings") or []
         best = max((holding_sim(g, h) for h in hs), default=0.0)
-        (recovered if best >= args.threshold
-         else missed).append((gi, case_no, kind, best))
+        if best >= args.threshold:
+            recovered.append((gi, case_no, kind, best))
+            continue
+        missed.append((gi, case_no, kind, best))
+        jacs = [(holding_jac(g, h), h) for h in hs]
+        bj, bh = max(jacs, key=lambda t: t[0], default=(0.0, None))
+        if bj >= CONTENT_JAC and bh is not None:
+            ours = (bh.get("issue") or {}).get("category")
+            cat_divergent.append((gi, case_no, bj, ours))
+            for c in g["category_canonical"]:
+                confusion[(CATEGORY_MAP.get(c, c), ours)] += 1
     rec_ids = {gi for gi, _, _, _ in recovered}
+    div_ids = {gi for gi, _, _, _ in cat_divergent}
 
     # recovery split by match tier: case_number cites are the trustworthy
     # denominator; district_alj fuzzy matches are matcher-dependent.
@@ -267,11 +310,14 @@ def main():
                 yield from walk_quotes(v)
     anchor_total = sum(1 for r in decisions.values() for _ in walk_quotes(r))
 
-    lines = ["# 2009 overlap-year evaluation", ""]
+    truncated = {c: truncation_notes(r) for c, r in decisions.items()
+                 if truncation_notes(r)}
+
+    lines = [f"# {args.year} overlap-year evaluation", ""]
     w = lines.append
     n_scored = len(scored)
     pct = lambda a, b: 100 * a / max(b, 1)
-    w(f"- gold holdings (2009 volume, cited): **{len(gold)}**")
+    w(f"- gold holdings ({args.year} volume, cited): **{len(gold)}**")
     w(f"- matched to an extracted decision: **{len(covered)}** "
       f"({ambiguous} ambiguous, {len(gold) - len(covered) - ambiguous} cite decisions outside our set)")
     w(f"- scored for recovery: **{n_scored}** (excluded: "
@@ -283,6 +329,11 @@ def main():
       f"**{exact_rec}/{exact_tot} ({pct(exact_rec, exact_tot):.0f}%)**")
     w(f"  - by fuzzy district+ALJ match (matcher-dependent): "
       f"{fuzzy_rec}/{fuzzy_tot} ({pct(fuzzy_rec, fuzzy_tot):.0f}%)")
+    w(f"- content extracted but category diverges from the volume's section "
+      f"(token overlap >= {CONTENT_JAC}, no category credit): "
+      f"**{len(cat_divergent)}** -- content-recovery including these: "
+      f"**{len(recovered) + len(cat_divergent)}/{n_scored} "
+      f"({pct(len(recovered) + len(cat_divergent), n_scored):.0f}%)**")
     w(f"- extracted holdings across {len(decisions)} decisions: {total_extracted} "
       f"({matched_extracted} matched gold; {total_extracted - matched_extracted} over-recovery / review queue)")
     w(f"- taxonomy escapes: {len(escapes)} category=other, {novel_subtypes} novel subtypes")
@@ -290,6 +341,13 @@ def main():
     w(f"- anchors: {anchor_total} total, {anchor_bad} unverified "
       f"({pct(anchor_bad, anchor_total):.1f}%)")
     w(f"- roster completeness: {dict(roster_completeness)}")
+    if truncated:
+        w(f"- **truncation-affected records: {len(truncated)}** -- recall "
+          f"misses on these may be window loss, not extraction failure:")
+        for c, notes in sorted(truncated.items()):
+            w(f"  - {c}: {'; '.join(notes)}")
+    else:
+        w("- truncation-affected records: 0")
     w("\n## Recovery by gold category\n")
     w("| category | covered | recovered | rate |")
     w("|---|---:|---:|---:|")
@@ -299,9 +357,17 @@ def main():
     w("\n## Disagreement kinds\n")
     for k, n in disagreement_kinds.most_common():
         w(f"- {k}: {n}")
-    w("\n## Missed gold holdings (review queue)\n")
+    w("\n## Category divergence (gold section -> our category)\n")
+    w("Gold holdings whose content we extracted under a different label than "
+      "the volume's section. Both label schemes are defensible; this table "
+      "is the systematic drift map for the side-by-side review.\n")
+    for (gc, oc), n in confusion.most_common():
+        w(f"- {gc} -> {oc}: {n}")
+    w("\n## Missed gold holdings (review queue, category-divergent excluded)\n")
     TIER = {"case_number": "exact", "district_alj": "fuzzy"}
-    for gi, case_no, kind, best in sorted(missed, key=lambda x: x[3])[:25]:
+    for gi, case_no, kind, best in sorted(missed, key=lambda x: x[3])[:30]:
+        if gi in div_ids:
+            continue
         g = gold[gi]
         w(f"- [{case_no}] ({TIER[kind]}) best_sim={best:.2f} "
           f"[{'/'.join(g['category_canonical'])}] {g['text'][:140]}")
@@ -321,9 +387,9 @@ def main():
 
     out = ROOT / "output" / "eval"
     out.mkdir(parents=True, exist_ok=True)
-    (out / "eval_2009.md").write_text("\n".join(lines) + "\n")
+    (out / f"eval_{args.year}.md").write_text("\n".join(lines) + "\n")
     print("\n".join(lines[:12]))
-    print(f"\nwrote {out / 'eval_2009.md'}")
+    print(f"\nwrote {out / f'eval_{args.year}.md'}")
     return 0
 
 

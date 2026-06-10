@@ -216,7 +216,7 @@ def run_extractions(cases, models):
           f"minus cached)", flush=True)
     for i, (c, pass_name, model) in enumerate(todo, 1):
         out = RAW / f"{c['case_no']}__{pass_name}__{model.replace(':', '_')}.json"
-        text = (CACHE / f"{c['best']['sha1']}.txt").read_text(errors="replace")
+        text = cached_text(c['best']['sha1'], CACHE)
         version = prompt_version_for(pass_name, text)
         user = "DECISION TEXT:\n\n" + text
         budget = plan_budget(pass_name, len(prompts[version]) + len(user))
@@ -472,7 +472,7 @@ def merge_case(case, models, validator, run_at):
     # ---- outcome: roster (deterministic-first), then names -> refs
     disp = parts["dispositions"]
     model_roster = disp.get("roster", []) or []
-    text = (CACHE / f"{case['best']['sha1']}.txt").read_text(errors="replace")
+    text = cached_text(case['best']['sha1'], CACHE)
     det = parse_roster(text)
     entries: list[dict] = []
     if det:

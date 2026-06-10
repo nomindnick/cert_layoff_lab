@@ -59,9 +59,12 @@ NATIVE_EXTS = {".rtf", ".doc", ".docx"}
 PDF_TEXT_CPP = 200     # chars/page >= this -> real text layer
 PDF_PARTIAL_CPP = 20   # below this -> effectively scanned
 
-# Rank for picking the best representative of a duplicate group.
+# Rank for picking the best representative of a duplicate group. pdf_ocr
+# (rapidocr text recovered from an image-only scan) ranks below any native
+# text layer but above the unusable kinds.
 KIND_RANK = {"native_docx": 0, "native_doc": 1, "native_rtf": 2,
-             "pdf_text": 3, "pdf_partial": 4, "pdf_scanned": 5, "error": 9}
+             "pdf_text": 3, "pdf_partial": 4, "pdf_ocr": 5,
+             "pdf_scanned": 6, "error": 9}
 
 # ---------------------------------------------------------------- extraction
 
@@ -124,21 +127,55 @@ def pdf_page_count(path: Path) -> int | None:
         return None
 
 
-def get_text(path: Path, cache_dir: Path) -> tuple[str, str, str]:
-    """Return (text, sha1, status). Cached by content hash."""
+def cached_text(sha1: str, cache_dir: Path) -> str:
+    """Best-available cached text for a content hash, for downstream stages
+    that look up text by sha1: the OCR sidecar wins only when the native
+    text is effectively empty (same rule as get_text)."""
+    native = cache_dir / f"{sha1}.txt"
+    text = native.read_text(errors="replace") if native.exists() else ""
+    ocr = cache_dir / f"{sha1}.ocr.txt"
+    if ocr.exists() and len(text.strip()) < 1000:
+        t2 = ocr.read_text(errors="replace")
+        if len(t2.strip()) > len(text.strip()):
+            return t2
+    return text
+
+
+def get_text(path: Path, cache_dir: Path) -> tuple[str, str, str, str]:
+    """Return (text, sha1, status, source). Cached by content hash.
+
+    source is "native" or "ocr": when ocr_pass.py has left a {sha}.ocr.txt
+    sidecar AND native extraction was effectively empty (an image-only scan),
+    the OCR text is preferred and the caller marks the file kind=pdf_ocr.
+    A real native text layer always wins over OCR."""
     sha = sha1_of(path)
     txt_file = cache_dir / f"{sha}.txt"
+    ocr_file = cache_dir / f"{sha}.ocr.txt"
+
+    def prefer_ocr(native_text: str):
+        if ocr_file.exists() and len(native_text.strip()) < 1000:
+            ocr_text = ocr_file.read_text(errors="replace")
+            if len(ocr_text.strip()) > len(native_text.strip()):
+                return ocr_text
+        return None
+
     if txt_file.exists():
-        return txt_file.read_text(errors="replace"), sha, "ok"
+        text = txt_file.read_text(errors="replace")
+        ocr = prefer_ocr(text)
+        return (ocr, sha, "ok", "ocr") if ocr else (text, sha, "ok", "native")
     extractor = EXTRACTORS.get(path.suffix.lower())
     if extractor is None:
-        return "", sha, "skipped: no extractor"
+        return "", sha, "skipped: no extractor", "native"
     try:
         text = extractor(path)
         txt_file.write_text(text)
-        return text, sha, "ok"
+        ocr = prefer_ocr(text)
+        return (ocr, sha, "ok", "ocr") if ocr else (text, sha, "ok", "native")
     except Exception as e:  # failures are NOT cached: retried every run
-        return "", sha, f"error: {type(e).__name__}: {e}"
+        ocr = prefer_ocr("")
+        if ocr:
+            return ocr, sha, "ok", "ocr"
+        return "", sha, f"error: {type(e).__name__}: {e}", "native"
 
 
 # ---------------------------------------------------------------- analysis
@@ -202,11 +239,13 @@ def analyze_file(path: Path, corpus_root: Path, cache_dir: Path) -> dict:
     stem = path.stem
     ext = path.suffix.lower()
     stat = path.stat()
-    text, sha, status = get_text(path, cache_dir)
+    text, sha, status, source = get_text(path, cache_dir)
 
     pages = pdf_page_count(path) if ext == ".pdf" else None
     if status != "ok":
         kind = "error"
+    elif source == "ocr":
+        kind = "pdf_ocr"
     elif ext == ".pdf":
         kind = classify_pdf_kind(text, pages)
     else:

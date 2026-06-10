@@ -351,7 +351,7 @@ def main() -> int:
              and r["text_chars"] >= args.min_chars]
     by_texthash: dict[str, dict] = {}
     for r in cands:
-        text = (args.cache / f"{r['sha1']}.txt").read_text(errors="replace")
+        text = cached_text(r['sha1'], args.cache)
         th = hashlib.sha1(text.encode()).hexdigest()
         if th not in by_texthash:
             r["_text"] = text
