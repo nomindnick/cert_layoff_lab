@@ -105,6 +105,20 @@ fights enter as subtypes, not new top levels).
 - No cross-decision respondent identity graph: PII-heavy, low value. Repeat
   litigation surfaces instead via `related_proceedings` (e.g. collateral
   estoppel from a prior year's writ).
+- **Deterministic rosters + `outcome.general_order`** (v0.2.0): mass-layoff
+  appendices are flat name tables of 200–400 entries; transcribing them
+  through the LLM dispositions pass was the overflow class (both models
+  truncated to invalid JSON on 2009030327) and a transposition surface on
+  mechanically-extractable data. `pipeline/roster.py` parses the table
+  shapes the corpus actually contains; when it succeeds, the dispositions
+  pass (prompt `dispositions_v2`) covers only respondents the decision
+  discusses individually, and the blanket order ("notice may be given to
+  all other respondents…") lands in `outcome.general_order`
+  {disposition, applies_to, quote}. The analytic contract: a respondent
+  with no individual disposition entry and a non-null `general_order` is
+  covered by it; integrity Gate 1 enforces roster↔disposition bijection
+  only when `general_order` is null. Table names are recorded verbatim
+  (OCR damage intact) — extract raw, normalize later.
 
 ## Resolution artifacts
 

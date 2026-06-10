@@ -9,7 +9,7 @@
   "properties": {
     "schema_version": {
       "type": "string",
-      "pattern": "^0\\.1\\.\\d+$",
+      "pattern": "^0\\.[12]\\.\\d+$",
       "description": "SemVer. Additive change bumps minor; breaking change bumps major. Spike stays 0.x."
     },
 
@@ -157,6 +157,24 @@
         "respondent_dispositions": {
           "type": "array",
           "items": { "$ref": "#/$defs/disposition_entry" }
+        },
+        "general_order": {
+          "description": "Blanket order covering rostered respondents the decision never discusses individually ('notice may be given to all [other] respondents...'). Null when every disposition is individual. Lets respondent_dispositions stay O(litigated-respondents) on mass-layoff rosters without losing the rest of the roster.",
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["disposition", "applies_to"],
+              "properties": {
+                "disposition": {
+                  "enum": ["terminated", "partially_terminated", "notice_rescinded", "accusation_dismissed", "released_temporary", "other", "unknown"]
+                },
+                "applies_to": { "enum": ["all_rostered", "all_other_rostered", "unknown"] },
+                "quote": { "oneOf": [{ "$ref": "#/$defs/quote_anchor" }, { "type": "null" }] }
+              }
+            }
+          ]
         }
       }
     },

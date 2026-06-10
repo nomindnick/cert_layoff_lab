@@ -37,6 +37,7 @@ from jsonschema import Draft202012Validator
 from bakeoff import (call_ollama, holdings_pass_schema, load_record_schema,
                      parse_json_loose, strip_unsupported)
 from inventory import KIND_RANK
+from roster import RefResolver, fuzzy_same_person, name_key, parse_roster
 
 ROOT = Path(__file__).resolve().parent.parent
 RAW = ROOT / "output" / "corpus" / "raw"
@@ -45,15 +46,47 @@ FAILED = ROOT / "output" / "corpus" / "failed"
 CACHE = ROOT / "output" / "cache" / "text"
 
 MODELS = ["qwen3.6:27b", "gemma4:31b"]   # primary first
-PASS_PROMPTS = {"identity": "identity_v1", "dispositions": "dispositions_v1",
-                "holdings": "holdings_v2"}
-SCHEMA_VERSION = "0.1.0"
+PASS_PROMPTS = {"identity": "identity_v1", "dispositions": "dispositions_v2",
+                "holdings": "holdings_v3"}
+# When the deterministic appendix parser (roster.py) recovers the name table,
+# the dispositions pass switches to the body-only prompt: roster transcription
+# is mechanical work the LLM should never do (REFINEMENTS #6), and the output
+# collapses from O(roster) back to O(litigated-respondents). The per-case
+# prompt actually used is recorded in the raw file and provenance.
+DISPOSITIONS_BODY_ONLY = "dispositions_v2_body"
+SCHEMA_VERSION = "0.2.0"
 
 # Per-pass generation budget overrides (else call_ollama defaults 12288/32768).
 # Dispositions enumerates one entry per respondent; mass-layoff appendices
 # (200-400 names) overflow the default num_predict mid-array and truncate to
 # invalid JSON, so this pass needs a much larger token budget and context.
 PASS_BUDGET = {"dispositions": {"num_predict": 24576, "num_ctx": 49152}}
+
+# Dynamic context sizing (REFINEMENTS #1): the prompt must never be silently
+# truncated. Both production models are 128k-class; KV cost of a larger window
+# is transient and within GTT headroom. CHARS_PER_TOKEN=3 is deliberately
+# conservative (2009 measured ~3.8) so the estimate errs toward a roomier
+# window, and ollama's actual prompt_eval_count is recorded for calibration.
+DEFAULT_NUM_PREDICT = 12288
+DEFAULT_NUM_CTX = 32768
+MAX_NUM_CTX = 131072
+CHARS_PER_TOKEN = 3
+
+
+def plan_budget(pass_name: str, prompt_chars: int) -> dict:
+    """num_predict/num_ctx for one call, sized so est_input + num_predict
+    fits with margin. Returns {"num_predict", "num_ctx", "est_input_tokens",
+    "input_may_truncate"}."""
+    base = PASS_BUDGET.get(pass_name, {})
+    num_predict = base.get("num_predict", DEFAULT_NUM_PREDICT)
+    num_ctx = base.get("num_ctx", DEFAULT_NUM_CTX)
+    est_input = prompt_chars // CHARS_PER_TOKEN + 512
+    need = est_input + num_predict + 512
+    if need > num_ctx:
+        num_ctx = min(MAX_NUM_CTX, -(-need // 4096) * 4096)
+    return {"num_predict": num_predict, "num_ctx": num_ctx,
+            "est_input_tokens": est_input,
+            "input_may_truncate": need > MAX_NUM_CTX}
 
 # ------------------------------------------------------------ pass schemas
 
@@ -80,10 +113,26 @@ def dispositions_pass_schema() -> dict:
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object", "additionalProperties": False,
         "required": ["overall", "roster", "roster_completeness",
-                     "respondent_dispositions"],
+                     "respondent_dispositions", "general_order"],
         "properties": {
             "overall": {"enum": ["sustained", "sustained_in_part",
                                  "not_sustained", "unknown"]},
+            # The blanket order covering respondents the decision never
+            # discusses individually ("notice may be given to all [other]
+            # respondents..."). Lets the dispositions array stay
+            # O(litigated-respondents) without losing the rest of the roster.
+            "general_order": {"oneOf": [{"type": "null"}, {
+                "type": "object", "additionalProperties": False,
+                "required": ["disposition", "applies_to"],
+                "properties": {
+                    "disposition": {"enum": [
+                        "terminated", "partially_terminated",
+                        "notice_rescinded", "accusation_dismissed",
+                        "released_temporary", "other", "unknown"]},
+                    "applies_to": {"enum": ["all_rostered",
+                                            "all_other_rostered", "unknown"]},
+                    "quote": {"oneOf": [{"$ref": "#/$defs/quote_anchor"},
+                                        {"type": "null"}]}}}]},
             "roster": {"type": "array", "items": {
                 "type": "object", "additionalProperties": False,
                 "required": ["name", "source"],
@@ -145,10 +194,20 @@ def select_cases(year: str, limit: int | None) -> list[dict]:
 # ------------------------------------------------------------------ runner
 
 
+def prompt_version_for(pass_name: str, text: str) -> str:
+    """Per-case prompt selection: the body-only dispositions prompt is used
+    exactly when the deterministic parser recovers the appendix table (same
+    check re-runs at merge, so runner and merge can never disagree)."""
+    if pass_name == "dispositions" and parse_roster(text):
+        return DISPOSITIONS_BODY_ONLY
+    return PASS_PROMPTS[pass_name]
+
+
 def run_extractions(cases, models):
     RAW.mkdir(parents=True, exist_ok=True)
-    prompts = {p: (ROOT / "pipeline" / "prompts" / f"{v}.txt").read_text()
-               for p, v in PASS_PROMPTS.items()}
+    versions = set(PASS_PROMPTS.values()) | {DISPOSITIONS_BODY_ONLY}
+    prompts = {v: (ROOT / "pipeline" / "prompts" / f"{v}.txt").read_text()
+               for v in versions}
     schemas = {p: strip_unsupported(fn()) for p, fn in PASS_SCHEMAS.items()}
     todo = [(c, p, m) for c in cases for p in PASS_PROMPTS for m in models
             if not (RAW / f"{c['case_no']}__{p}__{m.replace(':', '_')}.json").exists()]
@@ -158,15 +217,44 @@ def run_extractions(cases, models):
     for i, (c, pass_name, model) in enumerate(todo, 1):
         out = RAW / f"{c['case_no']}__{pass_name}__{model.replace(':', '_')}.json"
         text = (CACHE / f"{c['best']['sha1']}.txt").read_text(errors="replace")
+        version = prompt_version_for(pass_name, text)
+        user = "DECISION TEXT:\n\n" + text
+        budget = plan_budget(pass_name, len(prompts[version]) + len(user))
+        if budget["num_ctx"] > PASS_BUDGET.get(pass_name, {}).get(
+                "num_ctx", DEFAULT_NUM_CTX):
+            print(f"!! CONTEXT {c['case_no']} {pass_name}: est "
+                  f"~{budget['est_input_tokens']} input tokens exceeds the "
+                  f"default window; num_ctx={budget['num_ctx']}", flush=True)
+        if budget["input_may_truncate"]:
+            print(f"!! TRUNCATION RISK {c['case_no']} {pass_name}: input + "
+                  f"output exceed the {MAX_NUM_CTX}-token model maximum -- "
+                  f"the prompt WILL be cut; this case needs chunking",
+                  flush=True)
         t0 = time.time()
         rec = {"case_no": c["case_no"], "pass": pass_name, "model": model,
-               "prompt_version": PASS_PROMPTS[pass_name],
-               "source_sha1": c["best"]["sha1"]}
+               "prompt_version": version,
+               "source_sha1": c["best"]["sha1"],
+               "num_ctx": budget["num_ctx"],
+               "num_predict": budget["num_predict"],
+               "est_input_tokens": budget["est_input_tokens"]}
+        if budget["input_may_truncate"]:
+            rec["input_may_truncate"] = True
         try:
-            resp = call_ollama(model, prompts[pass_name],
-                               "DECISION TEXT:\n\n" + text, schemas[pass_name],
-                               **PASS_BUDGET.get(pass_name, {}))
+            resp = call_ollama(model, prompts[version], user,
+                               schemas[pass_name],
+                               num_predict=budget["num_predict"],
+                               num_ctx=budget["num_ctx"])
             rec["duration_s"] = round(time.time() - t0, 1)
+            # direct (not estimated) telemetry: input size for budget
+            # calibration, output size + done_reason for overflow detection
+            rec["prompt_eval_count"] = resp.get("prompt_eval_count")
+            rec["eval_count"] = resp.get("eval_count")
+            rec["done_reason"] = resp.get("done_reason")
+            if resp.get("done_reason") == "length":
+                rec["output_truncated"] = True
+                print(f"!! OUTPUT TRUNCATED {c['case_no']} {pass_name} "
+                      f"{model}: hit num_predict={budget['num_predict']}",
+                      flush=True)
             try:
                 rec["parsed"] = parse_json_loose(resp.get("response", ""))
             except Exception as e:
@@ -182,16 +270,10 @@ def run_extractions(cases, models):
 
 
 # ------------------------------------------------------------------- merge
-
-WORD = re.compile(r"[A-Za-z][\w'’\-]+")
-
-
-def surname(name: str) -> str:
-    """Last capitalized token; handles 'Last, First' order too."""
-    if "," in name:
-        return name.split(",")[0].strip().lower()
-    toks = WORD.findall(name)
-    return toks[-1].lower() if toks else name.lower()
+# Name->ref binding lives in roster.RefResolver. The previous surname-keyed
+# dict was the root cause of the audit's dominant disposition defect: two
+# roster entries sharing a surname collided, duplicating one ref and
+# dropping the other in ~26% of 2009 cases (Gate 1).
 
 
 def walk_disagreements(primary, secondary, path, out):
@@ -263,11 +345,12 @@ KEPT_REMEDIES = {"retain_employee", "rescind_notice"}
 
 
 def roster_ref_violations(record):
-    """Gate 1: respondent_dispositions refs must be a bijection with roster refs.
-    Adjacent same-surname collisions in the dispositions pass duplicate one ref
-    and drop another; aggregate tallies can survive but per-respondent lookups
-    corrupt. Returns (duplicate_refs, roster_without_disposition,
-    disposition_without_roster); all empty == clean."""
+    """Gate 1: respondent_dispositions refs must be a bijection with roster
+    refs -- unless outcome.general_order covers the rest of the roster, in
+    which case dispositions are a legitimate subset (duplicates and refs
+    outside the roster stay violations). Returns (duplicate_refs,
+    roster_without_disposition, disposition_without_roster); all empty ==
+    clean."""
     out = record.get("outcome") or {}
     roster_refs = [r.get("ref") for r in (out.get("roster") or []) if r.get("ref")]
     disp_refs = [d.get("ref") for d in (out.get("respondent_dispositions") or [])
@@ -278,7 +361,8 @@ def roster_ref_violations(record):
     for r in disp_refs:
         (dups if r in seen else seen).add(r)
     roster_set, disp_set = set(roster_refs), set(disp_refs)
-    return (sorted(dups), sorted(roster_set - disp_set), sorted(disp_set - roster_set))
+    missing = [] if out.get("general_order") else sorted(roster_set - disp_set)
+    return (sorted(dups), missing, sorted(disp_set - roster_set))
 
 
 def remedy_disposition_contradictions(record):
@@ -324,12 +408,15 @@ def collect_quotes(obj):
 def merge_case(case, models, validator, run_at):
     primary_m, secondary_m = models[0], models[1] if len(models) > 1 else None
 
+    raws: dict[tuple, dict | None] = {}
+    for p in PASS_PROMPTS:
+        for m in models:
+            f = RAW / f"{case['case_no']}__{p}__{m.replace(':', '_')}.json"
+            raws[(p, m)] = json.loads(f.read_text()) if f.exists() else None
+
     def load(pass_name, model):
-        f = RAW / f"{case['case_no']}__{pass_name}__{model.replace(':', '_')}.json"
-        if not f.exists():
-            return None
-        d = json.loads(f.read_text())
-        return d.get("parsed")
+        d = raws.get((pass_name, model))
+        return d.get("parsed") if d else None
 
     parts = {p: load(p, primary_m) for p in PASS_PROMPTS}
     sec = ({p: load(p, secondary_m) for p in PASS_PROMPTS}
@@ -349,7 +436,18 @@ def merge_case(case, models, validator, run_at):
                                   "values": [primary_m, secondary_m],
                                   "resolution": "primary_pass_failed_used_secondary"})
     if any(v is None for v in parts.values()):
-        return None, "missing primary pass output"
+        # every selected case must end up in decisions/ OR failed/ -- a
+        # silently absent record is the one unacceptable outcome (2009030327
+        # vanished this way when both models' dispositions passes overflowed)
+        detail = {}
+        for p in PASS_PROMPTS:
+            if parts[p] is not None:
+                detail[p] = "ok"
+                continue
+            detail[p] = {m: ("missing_raw" if raws[(p, m)] is None
+                             else raws[(p, m)].get("error", "no parsed output")[:160])
+                         for m in models}
+        return None, {"missing_pass_output": detail}
 
     ident = parts["identity"]
     if sec["identity"]:
@@ -371,20 +469,71 @@ def merge_case(case, models, validator, run_at):
             sy = None
         ident["identity"]["school_year_affected"] = sy
 
-    # ---- outcome: names -> refs
+    # ---- outcome: roster (deterministic-first), then names -> refs
     disp = parts["dispositions"]
-    roster_names = [e["name"] for e in disp.get("roster", [])]
-    refs = {surname(n): f"R{i}" for i, n in enumerate(roster_names, 1)}
-    roster = [{"ref": f"R{i}", "name": n,
-               "source": disp["roster"][i - 1].get("source", "unknown")}
-              for i, n in enumerate(roster_names, 1)]
+    model_roster = disp.get("roster", []) or []
+    text = (CACHE / f"{case['best']['sha1']}.txt").read_text(errors="replace")
+    det = parse_roster(text)
+    entries: list[dict] = []
+    if det:
+        # appendix table parsed deterministically; model entries that don't
+        # key-match are body-named respondents and are unioned in. Nothing
+        # the model read is dropped.
+        entries = [{"name": e["name"], "source": "appendix"}
+                   for e in det["entries"]]
+        det_keys = {name_key(e["name"]) for e in det["entries"]}
+        det_names = [e["name"] for e in det["entries"]]
+        added, fuzzy_dropped = [], []
+        for e in model_roster:
+            nm = e.get("name", "")
+            if name_key(nm) in det_keys:
+                continue
+            # phantom guard: a model spelling within edit distance 1 of a
+            # table entry (same given name) is the same person, not a 2nd one
+            if any(fuzzy_same_person(nm, dn) for dn in det_names):
+                fuzzy_dropped.append(nm)
+                continue
+            added.append(e)
+        entries += [{"name": e.get("name", ""),
+                     "source": e.get("source", "unknown")} for e in added]
+        disagreements.append({
+            "field_path": "outcome.roster",
+            "values": [{"deterministic": len(det["entries"]),
+                        "format": det["format"],
+                        "model": len(model_roster),
+                        "model_only_added": len(added),
+                        "fuzzy_duplicates_dropped": fuzzy_dropped}],
+            "resolution": "roster_deterministic_union"})
+        annots = [[e["name"], e["annotation"]] for e in det["entries"]
+                  if e.get("annotation")]
+        if annots:
+            disagreements.append({"field_path": "outcome.roster",
+                                  "values": annots,
+                                  "resolution": "roster_appendix_annotations"})
+    else:
+        entries = [{"name": e.get("name", ""),
+                    "source": e.get("source", "unknown")} for e in model_roster]
+    roster = [{"ref": f"R{i}", **e} for i, e in enumerate(entries, 1)]
+    resolver = RefResolver([(r["ref"], r["name"]) for r in roster])
+
+    def bind(name: str, where: str) -> str | None:
+        ref, status = resolver.resolve(name or "")
+        if ref is None:
+            disagreements.append({
+                "field_path": where, "values": [name],
+                "resolution": ("disposition_name_ambiguous"
+                               if status == "ambiguous"
+                               else "disposition_name_not_in_roster")})
+        elif status == "fuzzy":
+            disagreements.append({"field_path": where,
+                                  "values": [name, ref],
+                                  "resolution": "name_fuzzy_matched"})
+        return ref
+
     dispositions = []
     for d in disp.get("respondent_dispositions", []):
-        ref = refs.get(surname(d.get("name", "")))
+        ref = bind(d.get("name", ""), "outcome.respondent_dispositions")
         if not ref:
-            disagreements.append({"field_path": "outcome.respondent_dispositions",
-                                  "values": [d.get("name")],
-                                  "resolution": "disposition_name_not_in_roster"})
             continue
         dispositions.append({
             "ref": ref,
@@ -393,31 +542,33 @@ def merge_case(case, models, validator, run_at):
             "disposition": d["disposition"],
             "detail": d.get("detail"), "reason": d.get("reason"),
             "quote": d.get("quote")})
+    general_order = disp.get("general_order") or None
     if sec["dispositions"]:
         s = sec["dispositions"]
-        if len(s.get("roster", [])) != len(roster_names):
+        if len(s.get("roster", [])) != len(model_roster):
             disagreements.append({
                 "field_path": "outcome.roster",
-                "values": [len(roster_names), len(s.get("roster", []))],
+                "values": [len(model_roster), len(s.get("roster", []))],
                 "resolution": "kept_primary_roster"})
-        sec_by_surname = {surname(d.get("name", "")): d["disposition"]
-                          for d in s.get("respondent_dispositions", [])}
-        for d in disp.get("respondent_dispositions", []):
-            sn = surname(d.get("name", ""))
-            if sn in sec_by_surname and sec_by_surname[sn] != d["disposition"]:
+        prim_by_ref = {d["ref"]: d["disposition"] for d in dispositions}
+        for d in s.get("respondent_dispositions", []):
+            ref, _ = resolver.resolve(d.get("name", ""))
+            if (ref in prim_by_ref and d.get("disposition")
+                    and prim_by_ref[ref] != d["disposition"]):
                 disagreements.append({
-                    "field_path": f"outcome.dispositions[{sn}]",
-                    "values": [d["disposition"], sec_by_surname[sn]],
+                    "field_path": f"outcome.dispositions[{ref}]",
+                    "values": [prim_by_ref[ref], d["disposition"]],
                     "resolution": "kept_primary"})
 
     # ---- holdings: names -> refs; cross-model agreement
     from bakeoff import match_holdings
     holdings = []
-    for h in parts["holdings"].get("holdings", []):
+    for hi, h in enumerate(parts["holdings"].get("holdings", [])):
         h = copy.deepcopy(h)
         names = (h.get("ruling") or {}).pop("affected_respondents_names", [])
-        h["ruling"]["affected_respondents"] = [
-            refs[surname(n)] for n in names if surname(n) in refs]
+        bound = [bind(n, f"holdings[{hi}].ruling.affected_respondents")
+                 for n in names]
+        h["ruling"]["affected_respondents"] = [r for r in bound if r]
         holdings.append(h)
     if sec["holdings"]:
         ph, sh = parts["holdings"].get("holdings", []), sec["holdings"].get("holdings", [])
@@ -437,7 +588,6 @@ def merge_case(case, models, validator, run_at):
                     "values": [h.get("issue", {}).get("statement")],
                     "resolution": "secondary_only_holding_omitted"})
 
-    text = (CACHE / f"{case['best']['sha1']}.txt").read_text(errors="replace")
     record = {
         "schema_version": SCHEMA_VERSION,
         "identity": ident.get("identity"),
@@ -447,7 +597,8 @@ def merge_case(case, models, validator, run_at):
                     "roster": roster,
                     "roster_completeness": disp.get("roster_completeness",
                                                     "unknown"),
-                    "respondent_dispositions": dispositions},
+                    "respondent_dispositions": dispositions,
+                    "general_order": general_order},
         "holdings": holdings,
         "related_proceedings": parts["holdings"].get("related_proceedings", []),
         "full_text": text,
@@ -456,8 +607,12 @@ def merge_case(case, models, validator, run_at):
                               "kind": m["kind"]} for m in case["all"]],
             "text_sha1": case["best"]["sha1"],
             "passes": [{"name": p, "model": m,
-                        "prompt_version": PASS_PROMPTS[p],
-                        "run_at": run_at, "notes": None}
+                        "prompt_version": (raws[(p, m)] or {}).get(
+                            "prompt_version", PASS_PROMPTS[p]),
+                        "run_at": run_at,
+                        "notes": " ".join(k for k in ("output_truncated",
+                                                      "input_may_truncate")
+                                          if (raws[(p, m)] or {}).get(k)) or None}
                        for p in PASS_PROMPTS
                        for m in models],
             "reconciliation": {"status": "disputed" if disagreements
@@ -512,6 +667,8 @@ def merge_all(cases, models):
     for case in cases:
         record, errs = merge_case(case, models, validator, run_at)
         if record is None:
+            (FAILED / f"{case['case_no']}.json").write_text(json.dumps(
+                {"case_no": case["case_no"], "error": errs}, indent=2))
             stats["missing_passes"] += 1
             continue
         if errs:
@@ -521,6 +678,7 @@ def merge_all(cases, models):
         else:
             (DECISIONS / f"{case['case_no']}.json").write_text(
                 json.dumps(record, indent=2))
+            (FAILED / f"{case['case_no']}.json").unlink(missing_ok=True)
             stats["ok"] += 1
             n_dis = len(record["provenance"]["reconciliation"]["disagreements"])
             stats["disputed" if n_dis else "clean"] += 1
@@ -542,9 +700,19 @@ def main():
     if args.cmd == "status":
         done = sum(1 for c in cases for p in PASS_PROMPTS for m in models
                    if (RAW / f"{c['case_no']}__{p}__{m.replace(':', '_')}.json").exists())
+        merged = [c["case_no"] for c in cases
+                  if (DECISIONS / (c["case_no"] + ".json")).exists()]
+        failed = [c["case_no"] for c in cases
+                  if (FAILED / (c["case_no"] + ".json")).exists()]
+        # completeness invariant: every selected case is merged or quarantined
+        unaccounted = [c["case_no"] for c in cases
+                       if c["case_no"] not in set(merged) | set(failed)]
         print(f"{len(cases)} cases; raw outputs {done}/{len(cases) * len(PASS_PROMPTS) * len(models)}; "
-              f"merged {sum(1 for c in cases if (DECISIONS / (c['case_no'] + '.json')).exists())}")
-        return 0
+              f"merged {len(merged)}; quarantined {len(failed)}")
+        if unaccounted:
+            print(f"!! UNACCOUNTED ({len(unaccounted)}): neither merged nor "
+                  f"quarantined: {unaccounted[:20]}")
+        return 0 if not unaccounted else 1
     if not args.merge_only:
         run_extractions(cases, models)
     merge_all(cases, models)
