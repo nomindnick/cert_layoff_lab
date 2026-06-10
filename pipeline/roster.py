@@ -257,6 +257,228 @@ def _parse_pipe_tables(lines: list[str]) -> list[dict]:
     return entries
 
 
+# ------------------------------------------- header-less numbered tables
+
+# third corpus shape (2004030274): numbered rows, full "Last, First" name in
+# ONE cell, numeric FTE column, no header, folded two-column --
+#   180.|Sims, Mel|0.8|198.|Vasquez, Patricia|0.2|
+NUM_CELL = re.compile(r"^\d{1,3}[.)]?$")
+# ",." tolerates RTF/OCR punctuation noise after the comma (Karpontinis,. George)
+COMMA_NAME_CELL = re.compile(
+    r"^[A-Z][A-Za-z'’.‐-―\- ]{1,30},[.\s]*[A-Z][A-Za-z'’.‐-―\- ]{1,30}$")
+
+
+def _parse_numbered_name_tables(lines: list[str], min_entries: int = 8) -> list[dict]:
+    """(number, 'Last, First') cell pairs in pipe rows; accepted only as a
+    consecutive block totalling >= min_entries. Entries are ordered by their
+    printed index (folded columns interleave document order)."""
+    groups: list[list[tuple[int, str, str | None]]] = []
+    cur: list[tuple[int, str, str | None]] = []
+    gap = 0
+    for ln in lines:
+        found = []
+        if "|" in ln:
+            cells = [c.strip() for c in ln.split("|")]
+            for i in range(len(cells) - 1):
+                if not NUM_CELL.match(cells[i]):
+                    continue
+                raw = cells[i + 1]
+                annot = None
+                m = ANNOT_RE.search(raw)
+                if m:
+                    annot = m.group(1).lower()
+                    raw = raw[:m.start()].strip()
+                if COMMA_NAME_CELL.match(raw) and not NONNAME_TOKENS.search(raw):
+                    found.append((int(re.sub(r"\D", "", cells[i])), raw, annot))
+        if found:
+            cur.extend(found)
+            gap = 0
+        elif cur and gap < 2 and not ln.strip():
+            gap += 1
+        else:
+            if len(cur) >= min_entries:
+                groups.append(cur)
+            cur, gap = [], 0
+    if len(cur) >= min_entries:
+        groups.append(cur)
+    entries = []
+    for g in groups:
+        for num, raw, annot in sorted(g, key=lambda t: t[0]):
+            last, _, first = raw.partition(",")
+            entries.append({"last": last.strip(), "first": first.strip(),
+                            "name": f"{first.strip()} {last.strip()}".strip(),
+                            "annotation": annot})
+    return entries
+
+
+# ------------------------------------------------------- inline name runs
+
+# fourth corpus shape: names flowed inline, several per line, in TWO
+# comma-orientations that pair across the comma boundary in opposite ways:
+#   style A (2004030274):  Abel, Lorraine Abouelsood, Ahmed Adams, Tracy ...
+#       comma WITHIN each name (Last, First); between-name boundary is a
+#       bare space, so comma segments are [Last1][First1 Last2][First2 ...]
+#   style B (2009030320 caption): Amy Armstrong, Judith Austin, Maryanna
+#       Baldridge, ... -- comma BETWEEN names, each segment one full
+#       "First Last" name.
+# Misreading one as the other fabricates people by welding surname_k to
+# given_{k+1} (caught by comparing against model rosters), so orientation is
+# decided per block from the first segment's token count and a block whose
+# segments don't fit the chosen style cleanly is DROPPED, never guessed.
+
+NAME_TOKEN = re.compile(r"^[A-Z][A-Za-z'’‐-―\-]*\.?$")
+INLINE_SEG_SPLIT = re.compile(r",|\band\b")
+# prose-led list head: "... may notify Respondents Kristin Ackermann, ..."
+NAME_LIST_LEAD = re.compile(r"(?i)\brespondents?\b\s*[:,]?\s+([A-Z].*)$")
+
+
+def _seg_tokens(seg: str) -> list[str] | None:
+    toks = seg.split()
+    if not 1 <= len(toks) <= 4:
+        return None
+    if any(not NAME_TOKEN.match(t) for t in toks):
+        return None
+    if NONNAME_TOKENS.search(seg):
+        return None
+    return toks
+
+
+def _parse_inline_block(block: str) -> list[dict]:
+    segs = [s.strip(" .\t") for s in INLINE_SEG_SPLIT.split(block)]
+    segs = [s for s in segs if s]
+    if len(segs) < 3:
+        return []
+    toks = [_seg_tokens(s) for s in segs]
+    if toks[0] is None:
+        return []  # orientation unknowable without a clean first segment
+    if sum(t is None for t in toks) > 0.2 * len(segs):
+        return []  # not cleanly a name list -- refuse, don't guess
+    entries = []
+    if len(toks[0] or []) == 1:
+        # style A: [Last1][First1 Last2][First2 Last3]...[FirstN]
+        if sum(1 for t in toks[1:-1] if t and len(t) < 2) > 0.2 * len(segs):
+            return []
+        surname = (toks[0] or [""])[0]
+        for t in toks[1:]:
+            if t is None or not surname:
+                surname = t[-1] if t else ""
+                continue
+            given, nxt = (t[:-1], t[-1]) if len(t) > 1 else (t, "")
+            first = " ".join(given)
+            entries.append({"last": surname, "first": first,
+                            "name": f"{first} {surname}".strip(),
+                            "annotation": None})
+            surname = nxt
+    else:
+        # style B: every segment is a complete given-first name
+        for t in toks:
+            if t is None or len(t) < 2:
+                continue
+            entries.append({"last": t[-1], "first": " ".join(t[:-1]),
+                            "name": " ".join(t), "annotation": None})
+    return entries
+
+
+def _is_dense(s: str) -> bool:
+    segs = [x.strip(" .\t") for x in INLINE_SEG_SPLIT.split(s) if x.strip(" .\t")]
+    if len(segs) < 3:
+        return False
+    return sum(1 for x in segs if _seg_tokens(x)) >= 0.8 * len(segs)
+
+
+def _is_wrap(s: str) -> bool:
+    segs = [x.strip(" .\t") for x in INLINE_SEG_SPLIT.split(s) if x.strip(" .\t")]
+    return bool(segs) and len(segs) <= 2 and all(_seg_tokens(x) for x in segs)
+
+
+def _parse_inline_name_runs(lines: list[str], min_entries: int = 8) -> list[dict]:
+    """Accumulate name-list lines into blocks, parse with orientation
+    detection. THE OPENING RULE IS THE SAFETY: a dense line entered
+    MID-list ("Elmange, Janay Hamrick, Brian ...") is locally
+    indistinguishable from a Last-First list head, and misreading welds
+    surname_k to given_{k+1} -- fabricated people. So a block may only
+    open at an unambiguous head: the tail of a colon ("the following
+    respondents: ..."), or a dense line preceded by blank space / a short
+    header line / a line ending in ':'. A dense line directly after
+    ordinary prose is skipped, never guessed at. (Prose-embedded lists
+    without a colon are deliberately lost here -- those names are
+    individually discussed in the body and the model roster covers them.)
+    """
+    entries, block, gap = [], [], 0
+    # how the position is armed: "header" (short caps-ish title line --
+    # the only opener strong enough for a Last,First-shaped list), "blank"
+    # (page space -- safe only for full-name-first lists, since a bare
+    # surname after blanks may be a page-break resumption mid-list), or ""
+    armed = "blank"  # start-of-document
+
+    def styleA_shaped(s: str) -> bool:
+        first = INLINE_SEG_SPLIT.split(s)[0].strip(" .\t")
+        return len((_seg_tokens(first) or [None])) == 1 and _seg_tokens(first) is not None
+
+    def flush():
+        nonlocal block, gap
+        if block:
+            got = _parse_inline_block(" ".join(block))
+            if len(got) >= min_entries:
+                entries.extend(got)
+        block, gap = [], 0
+
+    for ln in lines:
+        s = ln.strip()
+        if "|" in s:
+            # a flowed name list can live INSIDE one table cell
+            # ('15|Beatty, Kimberly A Braginton, ...|Appendix A'); evaluate
+            # the dense cell on its own so junk cells can't skew orientation
+            dense_cells = [c.strip() for c in s.split("|")
+                           if c.strip() and _is_dense(c.strip())]
+            if dense_cells:
+                s = dense_cells[0]
+        if block:
+            if not s:
+                if gap < 4:   # page break inside a list, keep the block
+                    gap += 1
+                    continue
+                flush()
+                armed = "blank"
+                continue
+            if _is_dense(s):
+                block.append(s)
+                gap = 0
+                continue
+            if _is_wrap(s):
+                block.append(s)
+                flush()
+                continue
+            flush()
+        if not s:
+            if armed != "header":
+                armed = "blank"
+            continue
+        if ":" in s:
+            tail = s.rsplit(":", 1)[1].strip()
+            if tail and (_is_dense(tail) or _is_wrap(tail)):
+                block = [tail]   # colon tail is a guaranteed list head
+            else:
+                armed = "blank" if (not tail or len(tail) <= 40) else ""
+            continue
+        if _is_dense(s):
+            if armed == "header" or (armed == "blank" and not styleA_shaped(s)):
+                block = [s]
+            # otherwise: possible mid-list resumption -- unsafe, skip
+            armed = ""
+            continue
+        m = NAME_LIST_LEAD.search(s)
+        if m and _is_dense(m.group(1)):
+            block = [m.group(1)]  # keyword lead is an explicit list head
+            armed = ""
+            continue
+        # short caps-ish title line arms strongly for a following list
+        armed = ("header" if len(s) <= 60
+                 and not re.search(r"[a-z]{3,}.*[a-z]{3,}", s) else "")
+    flush()
+    return entries
+
+
 # -------------------------------------------------------------- line lists
 
 LASTFIRST_LINE = re.compile(
@@ -305,11 +527,14 @@ def parse_roster(text: str) -> dict | None:
     structured name table is confidently present. Dedupes on
     (surname, given) key, keeping first occurrence (document order)."""
     lines = _prejoin_hyphen_breaks(_norm(text).splitlines())
-    entries = _parse_pipe_tables(lines)
-    fmt = "pipe_table"
-    if not entries:
-        entries = _parse_line_lists(lines)
-        fmt = "line_list"
+    # one document can mix formats (2004030274: inline runs for rows 1-80,
+    # a numbered pipe table for 81-207), so union all parsers and dedupe
+    found = [("pipe_table", _parse_pipe_tables(lines)),
+             ("numbered_table", _parse_numbered_name_tables(lines)),
+             ("inline_run", _parse_inline_name_runs(lines)),
+             ("line_list", _parse_line_lists(lines))]
+    entries = [e for _, es in found for e in es]
+    fmt = "+".join(name for name, es in found if es)
     if not entries:
         return None
     seen, uniq = set(), []
