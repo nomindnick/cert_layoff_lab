@@ -284,3 +284,27 @@ deterministic, all "flag/normalize, preserve raw":
   employees" and `partially_terminated` when only a fraction of FTE is cut, rather
   than defaulting to generic `terminated` (8 coarse-but-right-direction labels in
   the audit).
+
+## 12. Editorial-observation recall class (scope decision, surfaced 2026-06-10)
+
+The residual recall floor after the hardening session: ~9 of 280 scored 2009
+gold holdings sit on cases where BOTH models under BOTH prompt generations
+(v2 and v3) extract zero holdings — and reading the decisions shows why: the
+gold volume catalogues noteworthy ALJ *observations on uncontested points*
+("no Respondent objected to the application of the tie-breaking criteria,"
+yet the volume records that unpointed criteria introduce subjectivity).
+These are practice observations, not adjudicated disputes, and the schema's
+holdings definition deliberately targets disputes; the agreement of two
+models across two prompt versions says this is a scope boundary, not an
+extraction defect.
+
+Options, deliberately NOT decided unilaterally:
+- accept the ~3% structural gap and disclose it in eval/summary docs;
+- a `holdings_v4` clause inviting "noteworthy ALJ practice observations even
+  absent objection" as `none_ruled` holdings — at the risk of reopening the
+  boilerplate-altitude precision problem #9 closed;
+- a separate lightweight "observations" pass/field, keeping the holdings
+  layer dispute-only.
+
+The right answer probably depends on what the regenerated year summaries
+must contain to satisfy the practitioners who used the original volumes.
