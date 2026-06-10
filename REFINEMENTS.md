@@ -4,6 +4,21 @@ Known issues and planned improvements that should carry into the production
 build. Found during/after the first full-year extraction run (2009, started
 2026-06-05); none are urgent enough to interrupt that run.
 
+> **Status update (2026-06-09 hardening session):** #1 ✅ (dynamic num_ctx +
+> telemetry in extract.py), #6 ✅ (deterministic rosters via roster.py +
+> general_order + body-only dispositions prompt), #7 ✅ (token telemetry in
+> raw records; eval surfaces truncation flags), #8 ✅ **root cause was the
+> merge, not the model** — the surname-keyed name→ref dict collided on
+> same-surname pairs; RefResolver fix dropped Gate 1 from 50 to 5 cases by
+> re-merge alone (prompts hardened anyway), #9 ✅ (holdings_v3 anchor gate +
+> administrative exclusion + remedies-from-order), #10 ✅ (disambiguation
+> block in holdings_v3; worked fixture examples in schema/examples/ still
+> open), #5 ✅ resolved by ocr_audit.py — the 1999–2001 OCR layers are
+> largely usable (mean 0.16 artifacts/10k chars; 5-file re-OCR queue), but
+> **2004 is image-only scans** (57 decisions + the gold volume), OCR'd via
+> ocr_pass.py/rapidocr. #11 partially done (edit-distance-1 phantom guard,
+> general-order coverage); #2/#3/#4 (throughput, scheduling, tiering) open.
+
 ## 1. Context-window truncation on outlier cases (correctness — fix before production)
 
 `call_ollama` uses a fixed `num_ctx: 32768` / `num_predict: 12288`
