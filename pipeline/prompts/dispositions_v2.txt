@@ -23,7 +23,7 @@ GENERAL ORDER
 - general_order captures a blanket order covering respondents the decision does not discuss individually ("notice may be given to all respondents...", "the accusations against the respondents listed in Appendix A are sustained").
 - When such an order exists: set general_order.disposition, applies_to (all_rostered when it covers everyone; all_other_rostered when named exceptions are carved out), and quote the operative sentence.
 - When every respondent's outcome is individual, set general_order to null.
-- Respondents covered only by the general order still get their per-respondent entry in this prompt's full-roster mode, with the disposition the order implies.
+- Respondents covered only by the general order still get their per-respondent entry in this prompt's full-roster mode, with the disposition the order implies — but keep those entries COMPACT: detail null, reason null, quote null. The general_order already carries the operative quote once; never repeat the same blanket-order quote on individual entries. Reserve per-entry quotes/details/reasons for respondents the decision discusses individually.
 
 UNNAMED GROUPS
 Groups the decision never names individually (released temporary employees identified by employee number, "all other respondents") cannot be rostered. Do not invent entries for them; reflect their existence in roster_completeness=partial and in the overall outcome.
