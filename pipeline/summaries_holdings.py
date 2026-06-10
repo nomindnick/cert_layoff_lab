@@ -357,6 +357,20 @@ def main() -> int:
             r["_text"] = text
             by_texthash[th] = r
 
+    # one parse per volume label: a scanned duplicate of a volume we hold as
+    # native text (the 1979-1990 PDFs next to their RTFs, OCR-able since the
+    # ocr_pass) must not double the gold holdings. Keep the best text per
+    # label (native ranks above pdf_ocr).
+    from inventory import KIND_RANK
+    by_label: dict[tuple, dict] = {}
+    for r in by_texthash.values():
+        label = year_label(r["filename"])
+        cur = by_label.get(label)
+        if cur is None or ((KIND_RANK.get(r["kind"], 9), -r["text_chars"])
+                           < (KIND_RANK.get(cur["kind"], 9), -cur["text_chars"])):
+            by_label[label] = r
+    by_texthash = {i: r for i, r in enumerate(by_label.values())}
+
     all_holdings, all_index = [], []
     for r in sorted(by_texthash.values(), key=lambda r: year_label(r["filename"])):
         sort_year, label = year_label(r["filename"])
