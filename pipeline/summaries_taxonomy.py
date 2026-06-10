@@ -25,6 +25,8 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
+from inventory import cached_text
+
 # ------------------------------------------------------------ canonical map
 #
 # Rules run against a normalized heading: uppercase, common OCR confusions

@@ -36,7 +36,7 @@ from jsonschema import Draft202012Validator
 
 from bakeoff import (call_ollama, holdings_pass_schema, load_record_schema,
                      parse_json_loose, strip_unsupported)
-from inventory import KIND_RANK
+from inventory import KIND_RANK, cached_text
 from roster import RefResolver, fuzzy_same_person, name_key, parse_roster
 
 ROOT = Path(__file__).resolve().parent.parent

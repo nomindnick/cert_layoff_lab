@@ -31,6 +31,7 @@ from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
+from inventory import cached_text
 from summaries_taxonomy import map_canonical, year_label
 
 # ------------------------------------------------------------ line patterns

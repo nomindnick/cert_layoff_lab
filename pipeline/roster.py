@@ -328,6 +328,7 @@ def parse_roster(text: str) -> dict | None:
 def cmd_compare(year: str) -> int:
     """Compare deterministic parses against cached model rosters."""
     from extract import CACHE, MODELS, RAW, select_cases
+    from inventory import cached_text
     primary = MODELS[0].replace(":", "_")
     n_parsed = n_model_only_big = 0
     print(f"{'case':<12} {'det':>4} {'model':>5} {'∩':>4}  notes")
