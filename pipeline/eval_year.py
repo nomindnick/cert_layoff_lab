@@ -113,6 +113,18 @@ def load_decisions(year):
     return recs
 
 
+def text_kind(rec):
+    """Extraction-text kind (native_rtf / pdf_text / pdf_ocr ...) -- the
+    source file whose sha1 supplied full_text. Lets recovery stratify by
+    text provenance, so OCR cost is measured, not guessed."""
+    prov = rec.get("provenance") or {}
+    sha = prov.get("text_sha1")
+    for s in prov.get("source_files") or []:
+        if s.get("sha1") == sha:
+            return s.get("kind") or "?"
+    return "?"
+
+
 def truncation_notes(rec):
     """Pass-level truncation flags recorded by extract.py telemetry."""
     notes = []
@@ -357,6 +369,24 @@ def main():
     w("\n## Disagreement kinds\n")
     for k, n in disagreement_kinds.most_common():
         w(f"- {k}: {n}")
+    w("\n## Recovery by text kind (OCR cost measurement)\n")
+    w("| kind | scored | recovered | content-recovered | rate | content rate |")
+    w("|---|---:|---:|---:|---:|---:|")
+    by_kind = Counter()
+    by_kind_rec = Counter()
+    by_kind_div = Counter()
+    for gi, (case_no, kind) in scored.items():
+        k = text_kind(decisions[case_no])
+        by_kind[k] += 1
+        if gi in rec_ids:
+            by_kind_rec[k] += 1
+        elif gi in div_ids:
+            by_kind_div[k] += 1
+    for k, n in by_kind.most_common():
+        r, dv = by_kind_rec.get(k, 0), by_kind_div.get(k, 0)
+        w(f"| {k} | {n} | {r} | {r + dv} | {pct(r, n):.0f}% | "
+          f"{pct(r + dv, n):.0f}% |")
+
     w("\n## Category divergence (gold section -> our category)\n")
     w("Gold holdings whose content we extracted under a different label than "
       "the volume's section. Both label schemes are defensible; this table "

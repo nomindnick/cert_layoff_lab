@@ -61,10 +61,12 @@ PDF_PARTIAL_CPP = 20   # below this -> effectively scanned
 
 # Rank for picking the best representative of a duplicate group. pdf_ocr
 # (rapidocr text recovered from an image-only scan) ranks below any native
-# text layer but above the unusable kinds.
+# text layer but above the unusable kinds. pdf_text_ocr_layer is a scan
+# whose every page is a raster image but which carries a third-party OCR
+# text layer -- usable, but ranked below born-digital pdf_text.
 KIND_RANK = {"native_docx": 0, "native_doc": 1, "native_rtf": 2,
-             "pdf_text": 3, "pdf_partial": 4, "pdf_ocr": 5,
-             "pdf_scanned": 6, "error": 9}
+             "pdf_text": 3, "pdf_text_ocr_layer": 4, "pdf_partial": 5,
+             "pdf_ocr": 6, "pdf_scanned": 7, "error": 9}
 
 # ---------------------------------------------------------------- extraction
 
@@ -125,6 +127,25 @@ def pdf_page_count(path: Path) -> int | None:
         return int(m.group(1)) if m else None
     except Exception:
         return None
+
+
+def pdf_image_page_ratio(path: Path, pages: int | None) -> float | None:
+    """Fraction of pages carrying a raster image -- a 'pdf_text' file whose
+    every page is an image is a scan with a pre-baked OCR text layer, NOT
+    born-digital, however clean its text looks. Deterministic, unlike
+    artifact-density heuristics."""
+    if not pages:
+        return None
+    try:
+        out = run(["pdfimages", "-list", str(path)], timeout=60)
+    except Exception:
+        return None
+    img_pages = set()
+    for line in out.splitlines()[2:]:
+        cols = line.split()
+        if cols and cols[0].isdigit() and len(cols) > 2 and cols[2] == "image":
+            img_pages.add(int(cols[0]))
+    return round(len(img_pages) / pages, 3)
 
 
 def cached_text(sha1: str, cache_dir: Path) -> str:
@@ -242,12 +263,18 @@ def analyze_file(path: Path, corpus_root: Path, cache_dir: Path) -> dict:
     text, sha, status, source = get_text(path, cache_dir)
 
     pages = pdf_page_count(path) if ext == ".pdf" else None
+    img_ratio = pdf_image_page_ratio(path, pages) if ext == ".pdf" else None
     if status != "ok":
         kind = "error"
     elif source == "ocr":
         kind = "pdf_ocr"
     elif ext == ".pdf":
         kind = classify_pdf_kind(text, pages)
+        # a text-bearing PDF whose pages are all raster images is a scan
+        # with a pre-baked OCR text layer -- mark it; the text may carry
+        # third-party OCR errors no artifact heuristic will catch
+        if kind == "pdf_text" and img_ratio is not None and img_ratio >= 0.9:
+            kind = "pdf_text_ocr_layer"
     else:
         kind = f"native_{ext[1:]}"
 
@@ -278,6 +305,7 @@ def analyze_file(path: Path, corpus_root: Path, cache_dir: Path) -> dict:
         "pdf_pages": pages,
         "text_chars": len(text.strip()),
         "alpha_ratio": round(r, 3) if (r := alpha_ratio(text)) is not None else None,
+        "image_page_ratio": img_ratio,
         "doc_class": doc_class,
         "case_numbers_filename": fn_cases,
         "case_numbers_text": text_cases,
