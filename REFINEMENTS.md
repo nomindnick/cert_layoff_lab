@@ -171,3 +171,101 @@ entirely, and removes the transcription-error surface. Pairs with #1: dynamic
 - `eval_2009.py` should exclude/flag the 5 oversized cases until they are
   re-extracted post-fix, so truncation-induced recall loss doesn't pollute
   the recovery metrics.
+
+---
+
+Items #8–#11 surfaced from the 2026-06-09 production-quality audit (39-case
+stratified deep audit graded against `full_text`; see `PRODUCTION_QUALITY.md`).
+The two highest-leverage gates from that audit are **already implemented** as
+merge-time integrity flags in `extract.py` (`roster_ref_violations`,
+`remedy_disposition_contradictions`) — they *detect and flag*, never delete. The
+items below *reduce the occurrence* of what those gates catch, plus the smaller
+structured-field cleanups.
+
+## 8. Dispositions-pass ref-binding bug — same-surname collision (correctness — fix before production)
+
+The dominant disposition-layer defect (audit: ~26% of cases; Gate 1
+`ROSTER_REF_BIJECTION_VIOLATION` confirms 50/192). When two roster entries share
+a surname (Smith/Smith, Becker/Becker, Myer/Myers, Jackson/Jackson, Sweda/Sweda,
+Henderson/Henderson, Vollmer/Vollmar), the dispositions pass duplicates one
+`R`-ref and drops the adjacent one. The model **reads the people correctly** — it
+is a structured keying failure, not a reading error. When both colliding entries
+share a disposition the aggregate tally survives (low severity); when they cross
+a disposition bucket or carry a person-specific detail it becomes a wrong-person
+attribution that corrupts the record (medium–high).
+
+**Production fix (prompt):** in the dispositions pass, instruct the model to emit
+exactly one disposition object per roster ref, **keyed by ref, never by
+surname**, and never merge or duplicate two people who share a surname; reinforce
+that each `detail`/`reason` string belongs to its specific ref. Add a worked
+same-surname few-shot in `schema/examples/`. Pairs with the deterministic roster
+extraction in #6 (which removes most of the transcription surface that triggers
+the collision in the first place). Gate 1 stays as the safety net regardless.
+
+**Until then:** per-respondent disposition analytics must filter out
+`ROSTER_REF_BIJECTION_VIOLATION` cases. Aggregate tallies are unaffected.
+
+## 9. Holding altitude — require an anchor for contested holdings, flag boilerplate (precision — `holdings_v3`)
+
+The audit found a thin band of over-recovery where administrative/boilerplate
+dispositions are elevated to litigated-holding status with weak grounding
+(positively-assured-attrition recitations, post-hearing-brief housekeeping,
+uncontested rescissions — several with empty quote anchors). Faithful, but at the
+wrong altitude.
+
+**Fix (prompt, `holdings_v2` → `v3`):** require a non-empty verbatim quote anchor
+for any item asserting a *contested adjudicated* ruling (the empty-anchor
+requirement auto-catches the boilerplate-as-holding cases), and direct the model
+to emit administrative/boilerplate dispositions under a distinct lower-altitude
+flag rather than as holdings. This is the largest defect cluster after the
+structured-field errors and is concentrated in the over-recovery class (the noted
+~2× defect density). Separately, the `ruling.remedies` enum is the single most
+reliable precision-defect locus (remedy contradicts disposition while prose and
+`prevailing_party` are correct); Gate 2 already flags the `retain`/`rescind`
+direction — consider a `v3` instruction to set `remedies` from the holding's
+actual order rather than its surface framing.
+
+## 10. Taxonomy boundary disambiguation (precision — low priority)
+
+Rare (2 clear of 112) but systematic where it occurs: miscategorization tracks
+two legally-adjacent boundaries — skipping (§44955(c)/(d)) vs bumping/retention
+(§44955(b)), and tie_breaking vs seniority. The model conflates them when the
+dispositive sub-issue differs from the surface framing (e.g. a "tie-breaking"
+caption whose actual disputed issue is whether orientation pay fixes the
+seniority date).
+
+**Fix (prompt + example):** add disambiguation guidance keying category on the
+*dispositive disputed sub-issue*, with a worked exemplar for each pair in
+`schema/examples/`. Cheap given the example-driven design; low frequency so low
+priority.
+
+## 11. Structured-field normalizers (deterministic post-process)
+
+Small, mechanical, high-confidence cleanups surfaced by the audit — all
+deterministic, all "flag/normalize, preserve raw":
+
+- **Self-consolidation junk:** drop or empty `procedure.consolidated_with` when
+  its only element equals the case's own OAH number (≥3 cases).
+- **`oah_case_no` format guard:** flag values failing the OAH checksum/format so
+  faithfully-copied source typos (`20099030721`) and OCR-space artifacts
+  normalize into canonical `case_no` while the raw is preserved.
+- **Placeholder-roster coverage gap:** when the adjudicated roster lives in an
+  un-reproduced Exhibit A, require `roster_completeness='partial'` AND populate a
+  structured `n_adjudicated_estimate` from the decision's own stated count (e.g.
+  "20 timely requested hearing") rather than collapsing the roster to a single
+  placeholder ref. Forbid a placeholder ref from co-existing with body-named
+  litigants who appear in holdings.
+- **Phantom-respondent (OCR name-split):** fuzzy near-duplicate surname check
+  (edit-distance 1–2 with matching given name, one variant appearing only in an
+  exception/appearance line) flags a possible phantom before assigning a distinct
+  ref (e.g. Vollmer/Vollmar split into two roster entries).
+- **`board_action.artifacts` sibling mismatch:** flag cases where an artifact's
+  `text` and `quote` fields describe different subject matter (e.g.
+  `skip_criteria.text` holding tiebreak/lottery content while `skip_criteria.quote`
+  is correctly skip content). The quote anchor itself is faithful, so this
+  escapes anchor verification.
+- **Disposition enum precision (nicety, not a blocker):** prefer
+  `released_temporary` when the ALJ dismisses "as required by law for temporary
+  employees" and `partially_terminated` when only a fraction of FTE is cut, rather
+  than defaulting to generic `terminated` (8 coarse-but-right-direction labels in
+  the audit).

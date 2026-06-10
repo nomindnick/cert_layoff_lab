@@ -27,6 +27,7 @@ import json
 import re
 import sys
 import time
+import unicodedata
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -213,6 +214,96 @@ def walk_disagreements(primary, secondary, path, out):
     return primary
 
 
+# Anchor verification normalizes both sides before the containment test:
+# PDF text carries curly quotes / en–em dashes / NBSP and columnar whitespace
+# that the model silently regularizes when it echoes a quote back. A raw
+# substring check fails ~80% of those as "unverified" though the span is
+# verbatim-present. Normalization only ever *reclaims* a flagged anchor; it
+# cannot make genuinely-absent text appear present (the words must still be
+# contiguous in the normalized source). Table reconstructions the model emits
+# as "A|B|C" are reclaimed by folding `|` to whitespace; "..."-elided spans are
+# verified fragment-by-fragment.
+_ANCHOR_TRANS = str.maketrans({
+    "‘": "'", "’": "'", "‚": "'", "‛": "'",
+    "“": '"', "”": '"', "„": '"', "‟": '"',
+    "‐": "-", "‑": "-", "‒": "-", "–": "-",
+    "—": "-", "―": "-", "−": "-",
+    "|": " ",
+})
+
+
+def anchor_norm(s: str) -> str:
+    s = unicodedata.normalize("NFKC", s or "").translate(_ANCHOR_TRANS)
+    return re.sub(r"\s+", " ", s).strip().casefold()
+
+
+def anchor_present(quote: str, text_norm: str) -> bool:
+    """True if `quote` is verbatim-locatable in already-normalized `text_norm`.
+    Splits "..."/"…"-elided quotes and requires every fragment to be present."""
+    if not text_norm:
+        return False
+    if "..." in quote or "…" in quote:
+        frags = [anchor_norm(p) for p in re.split(r"\.\.\.|…", quote)]
+        frags = [f for f in frags if f]
+        return bool(frags) and all(f in text_norm for f in frags)
+    qn = anchor_norm(quote)
+    return bool(qn) and qn in text_norm
+
+
+# Merge-time integrity gates (flag, never delete -- the disposition/remedy
+# structured layer is where the 2009 audit found defects, all deterministically
+# detectable; the holdings/identity/anchor layers stay trustworthy, so a tripped
+# gate marks the record disputed rather than quarantining otherwise-good data).
+# Remedies that unambiguously mean the respondent KEEPS the job, so they
+# contradict a "terminated" disposition. dismiss_accusation is excluded: it is
+# frequently mislabeled on district wins (where termination is correct) and is
+# too noisy to gate on. correct_seniority_list is excluded too: a corrected
+# seniority date coexists with termination (Manhattan Beach 2009031189).
+KEPT_REMEDIES = {"retain_employee", "rescind_notice"}
+
+
+def roster_ref_violations(record):
+    """Gate 1: respondent_dispositions refs must be a bijection with roster refs.
+    Adjacent same-surname collisions in the dispositions pass duplicate one ref
+    and drop another; aggregate tallies can survive but per-respondent lookups
+    corrupt. Returns (duplicate_refs, roster_without_disposition,
+    disposition_without_roster); all empty == clean."""
+    out = record.get("outcome") or {}
+    roster_refs = [r.get("ref") for r in (out.get("roster") or []) if r.get("ref")]
+    disp_refs = [d.get("ref") for d in (out.get("respondent_dispositions") or [])
+                 if d.get("ref")]
+    if not roster_refs or not disp_refs:
+        return [], [], []
+    seen, dups = set(), set()
+    for r in disp_refs:
+        (dups if r in seen else seen).add(r)
+    roster_set, disp_set = set(roster_refs), set(disp_refs)
+    return (sorted(dups), sorted(roster_set - disp_set), sorted(disp_set - roster_set))
+
+
+def remedy_disposition_contradictions(record):
+    """Gate 2: a holding whose remedy keeps the respondent (retain/rescind) while
+    EVERY affected respondent was terminated is an internal contradiction between
+    the holdings and dispositions layers (e.g. Oroville 2009031010, where the
+    disposition pass coded retained respondents as terminated). Requiring *all*
+    affected refs terminated excludes the benign bumping case (senior retained,
+    junior terminated -> mixed dispositions). Returns a list of
+    (holding_index, affected_refs, kept_remedies)."""
+    out = record.get("outcome") or {}
+    disp_by_ref = {}
+    for d in out.get("respondent_dispositions") or []:
+        if d.get("ref"):
+            disp_by_ref.setdefault(d["ref"], d.get("disposition"))
+    hits = []
+    for i, h in enumerate(record.get("holdings") or []):
+        ru = h.get("ruling") or {}
+        kept = set(ru.get("remedies") or []) & KEPT_REMEDIES
+        aff = ru.get("affected_respondents") or []
+        if kept and aff and all(disp_by_ref.get(ref) == "terminated" for ref in aff):
+            hits.append((i, list(aff), sorted(kept)))
+    return hits
+
+
 def collect_quotes(obj):
     out = []
     if isinstance(obj, dict):
@@ -378,14 +469,33 @@ def merge_case(case, models, validator, run_at):
     record = {k: v for k, v in record.items() if v is not None}
 
     # ---- anchor verification (flag, never delete)
+    text_norm = anchor_norm(text)
     unverified = [q for q in collect_quotes(record.get("holdings", []))
                   + collect_quotes(record.get("board_action", {}))
                   + collect_quotes(record.get("outcome", {}))
-                  if q not in text]
+                  if not anchor_present(q, text_norm)]
     for q in unverified:
         disagreements.append({"field_path": "anchor", "values": [q[:120]],
                               "resolution": "ANCHOR_UNVERIFIED"})
     if unverified:
+        record["provenance"]["reconciliation"]["status"] = "disputed"
+
+    # ---- integrity gates (flag, never delete)
+    dups, missing, extra = roster_ref_violations(record)
+    if dups or missing or extra:
+        disagreements.append({
+            "field_path": "outcome.respondent_dispositions",
+            "values": [{"duplicate_refs": dups,
+                        "roster_without_disposition": missing,
+                        "disposition_without_roster": extra}],
+            "resolution": "ROSTER_REF_BIJECTION_VIOLATION"})
+        record["provenance"]["reconciliation"]["status"] = "disputed"
+    for i, aff, kept in remedy_disposition_contradictions(record):
+        disagreements.append({
+            "field_path": f"holdings[{i}].ruling",
+            "values": [{"affected_respondents": aff, "remedies": kept,
+                        "disposition": "terminated"}],
+            "resolution": "REMEDY_DISPOSITION_CONTRADICTION"})
         record["provenance"]["reconciliation"]["status"] = "disputed"
 
     errs = [f"{list(e.absolute_path)}: {e.message[:110]}"

@@ -33,6 +33,54 @@ DISTRICT_STOP = {"unified", "school", "district", "joint", "union", "elementary"
                  "usd", "sd", "uhsd", "esd", "coe", "doe", "community", "college"}
 # gold's outcome-laden pair maps onto the schema's outcome-neutral category
 CATEGORY_MAP = {"pks_allowed": "pks_reduction", "pks_not_allowed": "pks_reduction"}
+# The gold volume treats "competency" as a first-class category; our taxonomy
+# treats competency as the *reason* and files the holding under its *mechanism*
+# (a senior teacher bumping/being skipped for lack of competency). That is a
+# defensible labeling choice, so a gold competency holding earns category credit
+# when we tagged it competency OR bumping OR skipping. See the 2009 quality pass.
+CROSS_CREDIT = {"competency": {"competency", "bumping", "skipping"}}
+
+
+def acceptable_cats(gold_cats):
+    acc = set()
+    for c in gold_cats:
+        c = CATEGORY_MAP.get(c, c)
+        acc.add(c)
+        acc |= CROSS_CREDIT.get(c, set())
+    return acc
+
+
+# Editorial citation/cross-reference lines the gold volume carries that are not
+# case-specific holdings (e.g. "OAH No. 2009030486 - Grossmont Union (Hjelt)",
+# "Interns acquire layoff Reef-Sunset (Walker)"): short, and terminating in a
+# district+ALJ citation. These cannot match a full extracted holding and are
+# not an extraction target, so they are excluded from the recovery denominator.
+_CITE_TAIL = re.compile(r"\([A-Z][a-z]+\)\s*$")
+_OAH_LEAD = re.compile(r"^\s*OAH\s+No", re.I)
+
+
+def is_citation_shorthand(text):
+    t = (text or "").strip()
+    wc = len(t.split())
+    return wc < 12 or (wc < 25 and bool(_CITE_TAIL.search(t))) or bool(_OAH_LEAD.match(t))
+
+
+# A zero-holding decision is excluded from the recovery denominator only when its
+# outcome shows the matter was genuinely uncontested -- a default/stipulation
+# whose gold "holding" is a black-letter recitation the schema omits. If any
+# respondent obtained relief (notice rescinded, accusation dismissed, partial
+# termination) or the district did not prevail, the case was adjudicated, so an
+# empty holdings[] is a real recall miss, not out-of-scope -- it stays scored.
+RELIEF_DISPOSITIONS = {"accusation_dismissed", "notice_rescinded",
+                       "partially_terminated"}
+
+
+def is_uncontested_default(rec):
+    out = rec.get("outcome") or {}
+    if out.get("overall") == "not_sustained":
+        return False
+    return not any((d.get("disposition") in RELIEF_DISPOSITIONS)
+                   for d in out.get("respondent_dispositions") or [])
 
 
 def tokens(s):
@@ -60,7 +108,15 @@ def load_decisions():
 
 
 def match_gold_to_decision(gold, decisions):
-    """Return {gold_idx: case_no | None}; None = decision not in our set."""
+    """Return {gold_idx: (case_no | None, kind, confidence)}.
+
+    kind is "case_number" (the gold volume appended an OAH number we hold -- the
+    trustworthy tier), "district_alj" (fuzzy fallback on district tokens + ALJ
+    surname -- matcher-dependent, segregated in the report so recovery is not
+    conflated with match quality), or None (decision not in our set / ambiguous).
+    Fuzzy matching now *requires* ALJ-surname agreement when the gold cite names
+    an ALJ; a bare district-token overlap is no longer enough to bind a holding
+    to a case."""
     by_district = defaultdict(list)
     for case_no, r in decisions.items():
         d = ((r.get("identity") or {}).get("district") or {}).get("raw") or ""
@@ -71,7 +127,7 @@ def match_gold_to_decision(gold, decisions):
         cite = g["cites"][-1]
         case = cite.get("case_number")
         if case and case in decisions:
-            out[gi] = case
+            out[gi] = (case, "case_number", 1.0)
             continue
         gtok = district_tokens(cite["district"])
         galj = tokens(cite["alj"])
@@ -80,20 +136,21 @@ def match_gold_to_decision(gold, decisions):
             if not gtok or not dtok:
                 continue
             overlap = len(gtok & dtok) / len(gtok | dtok)
-            alj_ok = bool(galj & atok) or not galj
+            # require ALJ-surname agreement when the gold cite names one
+            alj_ok = bool(galj & atok) if galj else True
             if overlap >= 0.5 and alj_ok:
                 cands.append((overlap, case_no))
         if len(cands) == 1:
-            out[gi] = cands[0][1]
+            out[gi] = (cands[0][1], "district_alj", cands[0][0])
         elif len(cands) > 1:
             cands.sort(reverse=True)
             if cands[0][0] > cands[1][0]:
-                out[gi] = cands[0][1]
+                out[gi] = (cands[0][1], "district_alj", cands[0][0])
             else:
                 ambiguous += 1
-                out[gi] = None
+                out[gi] = (None, None, 0.0)
         else:
-            out[gi] = None
+            out[gi] = (None, None, 0.0)
     return out, ambiguous
 
 
@@ -103,9 +160,8 @@ def holding_sim(gold_h, model_h):
         tokens(model_h.get("summary_style_holding") or "") | \
         tokens(((model_h.get("reasoning") or {}).get("summary")) or "")
     jac = len(gt & mt) / len(gt | mt) if (gt or mt) else 0.0
-    gcats = {CATEGORY_MAP.get(c, c) for c in gold_h["category_canonical"]}
     cat = (model_h.get("issue") or {}).get("category")
-    return 0.6 * jac + (0.4 if cat in gcats else 0.0)
+    return 0.6 * jac + (0.4 if cat in acceptable_cats(gold_h["category_canonical"]) else 0.0)
 
 
 def main():
@@ -117,26 +173,54 @@ def main():
     decisions = load_decisions()
     print(f"{len(gold)} gold 2009 holdings; {len(decisions)} extracted decisions")
     gmap, ambiguous = match_gold_to_decision(gold, decisions)
-    covered = {gi: c for gi, c in gmap.items() if c}
+    covered = {gi: (c, kind) for gi, (c, kind, conf) in gmap.items() if c}
+
+    # Segregate gold the extraction does not target before scoring recovery, so
+    # the rate reflects what the schema actually tries to do:
+    #   - citation/cross-reference lines (not case-specific holdings)
+    #   - gold holdings on cases we extracted with zero holdings: default/
+    #     uncontested matters whose gold "holding" is a black-letter rule
+    #     recitation the schema deliberately omits (empty holdings[] = signal).
+    # Both buckets are reported with case lists, never silently dropped.
+    excluded_cite, excluded_default, scored = [], [], {}
+    for gi, (case_no, kind) in covered.items():
+        if is_citation_shorthand(gold[gi]["text"]):
+            excluded_cite.append((gi, case_no))
+        elif (not (decisions[case_no].get("holdings") or [])
+              and is_uncontested_default(decisions[case_no])):
+            excluded_default.append((gi, case_no))
+        else:
+            scored[gi] = (case_no, kind)
 
     recovered, missed = [], []
-    for gi, case_no in covered.items():
+    for gi, (case_no, kind) in scored.items():
         g = gold[gi]
         hs = decisions[case_no].get("holdings") or []
         best = max((holding_sim(g, h) for h in hs), default=0.0)
-        (recovered if best >= args.threshold else missed).append((gi, case_no, best))
+        (recovered if best >= args.threshold
+         else missed).append((gi, case_no, kind, best))
+    rec_ids = {gi for gi, _, _, _ in recovered}
+
+    # recovery split by match tier: case_number cites are the trustworthy
+    # denominator; district_alj fuzzy matches are matcher-dependent.
+    def tier_counts(k):
+        tot = sum(1 for _, (c, kind) in scored.items() if kind == k)
+        rec = sum(1 for gi, _, kind, _ in recovered if kind == k)
+        return rec, tot
+    exact_rec, exact_tot = tier_counts("case_number")
+    fuzzy_rec, fuzzy_tot = tier_counts("district_alj")
 
     by_cat_total, by_cat_rec = Counter(), Counter()
-    for gi, case_no in covered.items():
+    for gi, (case_no, kind) in scored.items():
         for c in gold[gi]["category_canonical"]:
             c = CATEGORY_MAP.get(c, c)
             by_cat_total[c] += 1
-            if any(g == gi for g, _, _ in recovered):
+            if gi in rec_ids:
                 by_cat_rec[c] += 1
 
     # over-recovery + escapes + reconciliation + anchors
     matched_model = defaultdict(set)
-    for gi, case_no in covered.items():
+    for gi, (case_no, kind) in scored.items():
         g = gold[gi]
         hs = decisions[case_no].get("holdings") or []
         sims = [(holding_sim(g, h), i) for i, h in enumerate(hs)]
@@ -185,17 +269,26 @@ def main():
 
     lines = ["# 2009 overlap-year evaluation", ""]
     w = lines.append
+    n_scored = len(scored)
+    pct = lambda a, b: 100 * a / max(b, 1)
     w(f"- gold holdings (2009 volume, cited): **{len(gold)}**")
     w(f"- matched to an extracted decision: **{len(covered)}** "
       f"({ambiguous} ambiguous, {len(gold) - len(covered) - ambiguous} cite decisions outside our set)")
-    w(f"- **recovered: {len(recovered)}/{len(covered)} "
-      f"({100 * len(recovered) / max(len(covered), 1):.0f}%)** at threshold {args.threshold}")
+    w(f"- scored for recovery: **{n_scored}** (excluded: "
+      f"{len(excluded_cite)} editorial citation lines, "
+      f"{len(excluded_default)} rule-statements on default/uncontested matters)")
+    w(f"- **recovered: {len(recovered)}/{n_scored} "
+      f"({pct(len(recovered), n_scored):.0f}%)** at threshold {args.threshold}")
+    w(f"  - by exact OAH-number cite (trustworthy): "
+      f"**{exact_rec}/{exact_tot} ({pct(exact_rec, exact_tot):.0f}%)**")
+    w(f"  - by fuzzy district+ALJ match (matcher-dependent): "
+      f"{fuzzy_rec}/{fuzzy_tot} ({pct(fuzzy_rec, fuzzy_tot):.0f}%)")
     w(f"- extracted holdings across {len(decisions)} decisions: {total_extracted} "
       f"({matched_extracted} matched gold; {total_extracted - matched_extracted} over-recovery / review queue)")
     w(f"- taxonomy escapes: {len(escapes)} category=other, {novel_subtypes} novel subtypes")
     w(f"- records with any disagreement: {disputed}/{len(decisions)}")
     w(f"- anchors: {anchor_total} total, {anchor_bad} unverified "
-      f"({100 * anchor_bad / max(anchor_total, 1):.1f}%)")
+      f"({pct(anchor_bad, anchor_total):.1f}%)")
     w(f"- roster completeness: {dict(roster_completeness)}")
     w("\n## Recovery by gold category\n")
     w("| category | covered | recovered | rate |")
@@ -207,10 +300,21 @@ def main():
     for k, n in disagreement_kinds.most_common():
         w(f"- {k}: {n}")
     w("\n## Missed gold holdings (review queue)\n")
-    for gi, case_no, best in sorted(missed, key=lambda x: x[2])[:25]:
+    TIER = {"case_number": "exact", "district_alj": "fuzzy"}
+    for gi, case_no, kind, best in sorted(missed, key=lambda x: x[3])[:25]:
         g = gold[gi]
-        w(f"- [{case_no}] best_sim={best:.2f} [{'/'.join(g['category_canonical'])}] "
-          f"{g['text'][:140]}")
+        w(f"- [{case_no}] ({TIER[kind]}) best_sim={best:.2f} "
+          f"[{'/'.join(g['category_canonical'])}] {g['text'][:140]}")
+    w("\n## Excluded: default/uncontested matters (rule-statements, out of scope)\n")
+    w("Gold holdings on cases we extracted with **zero** holdings *and* whose "
+      "outcome shows no respondent obtained relief -- default/stipulated matters "
+      "whose gold \"holding\" is a black-letter recitation the schema omits. "
+      "Zero-holding cases where any respondent prevailed are kept in the scored "
+      "set as genuine recall misses, not listed here.")
+    w("")
+    for gi, case_no in sorted(excluded_default, key=lambda x: x[1]):
+        g = gold[gi]
+        w(f"- [{case_no}] [{'/'.join(g['category_canonical'])}] {g['text'][:140]}")
     w("\n## Taxonomy escape samples\n")
     for case_no, prop in escapes[:15]:
         w(f"- [{case_no}] proposed: {prop}")
