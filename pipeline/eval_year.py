@@ -175,7 +175,7 @@ def match_gold_to_decision(gold, decisions):
                 out[gi] = (cands[0][1], "district_alj", cands[0][0])
             else:
                 ambiguous += 1
-                out[gi] = (None, None, 0.0)
+                out[gi] = (None, "ambiguous", 0.0)
         else:
             out[gi] = (None, None, 0.0)
     return out, ambiguous
@@ -238,19 +238,24 @@ def main():
 
     recovered, missed, cat_divergent = [], [], []
     confusion = Counter()
+    best_map = {}  # gi -> (holding_idx | None, best_sim) by combined score
+    div_map = {}   # gi -> holding_idx of the content-jac match (divergent tier)
     for gi, (case_no, kind) in scored.items():
         g = gold[gi]
         hs = decisions[case_no].get("holdings") or []
-        best = max((holding_sim(g, h) for h in hs), default=0.0)
+        sims = [(holding_sim(g, h), i) for i, h in enumerate(hs)]
+        best, bi = max(sims, default=(0.0, None))
+        best_map[gi] = (bi, best)
         if best >= args.threshold:
             recovered.append((gi, case_no, kind, best))
             continue
         missed.append((gi, case_no, kind, best))
-        jacs = [(holding_jac(g, h), h) for h in hs]
-        bj, bh = max(jacs, key=lambda t: t[0], default=(0.0, None))
+        jacs = [(holding_jac(g, h), i, h) for i, h in enumerate(hs)]
+        bj, bidx, bh = max(jacs, key=lambda t: t[0], default=(0.0, None, None))
         if bj >= CONTENT_JAC and bh is not None:
             ours = (bh.get("issue") or {}).get("category")
             cat_divergent.append((gi, case_no, bj, ours))
+            div_map[gi] = bidx
             for c in g["category_canonical"]:
                 confusion[(CATEGORY_MAP.get(c, c), ours)] += 1
     rec_ids = {gi for gi, _, _, _ in recovered}
@@ -276,13 +281,9 @@ def main():
     # over-recovery + escapes + reconciliation + anchors
     matched_model = defaultdict(set)
     for gi, (case_no, kind) in scored.items():
-        g = gold[gi]
-        hs = decisions[case_no].get("holdings") or []
-        sims = [(holding_sim(g, h), i) for i, h in enumerate(hs)]
-        if sims:
-            s, i = max(sims)
-            if s >= args.threshold:
-                matched_model[case_no].add(i)
+        bi, s = best_map[gi]
+        if bi is not None and s >= args.threshold:
+            matched_model[case_no].add(bi)
     total_extracted = sum(len(r.get("holdings") or []) for r in decisions.values())
     matched_extracted = sum(len(v) for v in matched_model.values())
 
@@ -420,6 +421,72 @@ def main():
     (out / f"eval_{args.year}.md").write_text("\n".join(lines) + "\n")
     print("\n".join(lines[:12]))
     print(f"\nwrote {out / f'eval_{args.year}.md'}")
+
+    # ---- structured alignment (consumed by annotate_summary.py) ----
+    # Same scoring pass the markdown report is built from, preserved as data:
+    # one record per gold holding (match + status), one per extracted holding
+    # (which gold it matched, if any). Statuses are mutually exclusive.
+    excluded_cite_ids = {gi for gi, _ in excluded_cite}
+    excluded_default_ids = {gi for gi, _ in excluded_default}
+    div_case_idx = {gi: div_map.get(gi) for gi in div_ids}
+    gold_records = []
+    for gi, g in enumerate(gold):
+        case_no, kind, conf = gmap[gi]
+        if case_no is None:
+            status = "ambiguous_match" if kind == "ambiguous" else "decision_not_in_set"
+        elif gi in excluded_cite_ids:
+            status = "excluded_citation_line"
+        elif gi in excluded_default_ids:
+            status = "excluded_default_rule_statement"
+        elif gi in rec_ids:
+            status = "recovered"
+        elif gi in div_ids:
+            status = "category_divergent"
+        else:
+            status = "missed"
+        bi, bs = best_map.get(gi, (None, 0.0))
+        if status == "category_divergent":
+            bi = div_case_idx.get(gi)
+        gold_records.append({
+            "gold_idx": gi,
+            "status": status,
+            "text": g["text"],
+            "categories": sorted({CATEGORY_MAP.get(c, c) for c in g["category_canonical"]}),
+            "letter": g.get("letter"),
+            "item_number": g.get("item_number"),
+            "cite": g["cites"][-1],
+            "case_no": case_no,
+            "match_tier": kind if case_no else None,
+            "holding_idx": bi if status in ("recovered", "category_divergent") else None,
+            "best_sim": round(bs, 3),
+        })
+    gold_by_holding = defaultdict(list)
+    for r in gold_records:
+        if r["holding_idx"] is not None:
+            gold_by_holding[(r["case_no"], r["holding_idx"])].append(r["gold_idx"])
+    system_records = []
+    for case_no, rec in sorted(decisions.items()):
+        for hi, h in enumerate(rec.get("holdings") or []):
+            matched = gold_by_holding.get((case_no, hi), [])
+            status = "matched" if any(
+                gold_records[gi]["status"] == "recovered" for gi in matched
+            ) else "category_divergent_match" if matched else "over_recovery"
+            system_records.append({
+                "case_no": case_no,
+                "holding_idx": hi,
+                "status": status,
+                "matched_gold_idxs": matched,
+                "category": (h.get("issue") or {}).get("category"),
+            })
+    alignment = {
+        "year": args.year,
+        "threshold": args.threshold,
+        "gold": gold_records,
+        "system": system_records,
+    }
+    (out / f"alignment_{args.year}.json").write_text(
+        json.dumps(alignment, indent=1, ensure_ascii=False))
+    print(f"wrote {out / f'alignment_{args.year}.json'}")
     return 0
 
 
